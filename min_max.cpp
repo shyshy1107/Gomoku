@@ -1,4 +1,4 @@
-#include "minmax.h"
+#include "min_max.h"
 
 MinMax::MinMax(Board* board, char player) : board(board), player(player) {}
 

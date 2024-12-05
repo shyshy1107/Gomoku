@@ -55,6 +55,13 @@ bool Board::isValidMove(int x, int y) const {
     return x >= 0 && x < size && y >= 0 && y < size && grid[x][y] == '.';
 }
 
+bool Board::checkWinFrom(int x, int y, char piece) {
+    // 现在可以利用传入的坐标 (x, y) 和 piece 来判断是否有五子连线
+    // 例如，检查该位置的横竖斜连成五子的条件
+    return checkHorizontal(x, y, piece) || checkVertical(x, y, piece) || 
+checkDiagonal1(x, y, piece) || checkDiagonal2(x, y, piece);
+}
+
 bool Board::checkHorizontal(int x, int y, char piece) {
     int count = 1;  // 包括当前的位置
     // 向右检查

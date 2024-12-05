@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build gomoku",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "main.cpp",
+                "game.cpp",
+                "player.cpp",
+                "board.cpp",
+                "min_max.cpp",
+                "save_load.cpp",
+                "-o",
+                "gomoku"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

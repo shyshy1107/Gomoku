@@ -24,7 +24,7 @@ AIPlayer::AIPlayer(Board* board, char piece) : Player(board, piece) {}
 
 void AIPlayer::makeMove() {
     // Min-Max 算法决策
-    int bestScore = INT_MIN;
+    /*int bestScore = INT_MIN;
     int bestMoveX = -1, bestMoveY = -1;
 
     for (int x = 0; x < board->getSize(); ++x) {
@@ -43,7 +43,11 @@ void AIPlayer::makeMove() {
     }
 
     // 落子
-    board->placePiece(bestMoveX, bestMoveY, piece);
+    board->placePiece(bestMoveX, bestMoveY, piece);*/
+    int x,y;
+    do{
+        x=rand()%(board->getSize()),y=rand()%(board->getSize());
+    }while(!board->placePiece(x,y,piece));
 }
 
 int AIPlayer::minimax(int depth, bool isMaximizing) {
