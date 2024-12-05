@@ -41,14 +41,14 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
                 outFile << "\n";
             }
             outFile.close();
-            MessageBox(hwnd, L"Game saved!", L"Save", MB_OK);
+            MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
         }
         break;
     case 2: // 读盘
         {
             std::ifstream inFile("board.txt");
             if (!inFile) {
-                MessageBox(hwnd, L"Failed to load the game!", L"Load", MB_OK);
+                MessageBoxW(hwnd, L"Failed to load the game!", L"Load", MB_OK);
                 return;
             }
             for (int i = 0; i < BOARD_SIZE; ++i) {
@@ -83,10 +83,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         // 创建菜单
         {
             HMENU hMenu = CreateMenu();
-            AppendMenu(hMenu, MF_STRING, 1, L"Save Game");
-            AppendMenu(hMenu, MF_STRING, 2, L"Load Game");
-            AppendMenu(hMenu, MF_STRING, 3, L"Restart Game");
-            AppendMenu(hMenu, MF_STRING, 4, L"Exit");
+            AppendMenuW(hMenu, MF_STRING, 1, L"Save Game");
+            AppendMenuW(hMenu, MF_STRING, 2, L"Load Game");
+            AppendMenuW(hMenu, MF_STRING, 3, L"Restart Game");
+            AppendMenuW(hMenu, MF_STRING, 4, L"Exit");
             SetMenu(hwnd, hMenu);
         }
         return 0;
@@ -130,14 +130,15 @@ int main() {
     HINSTANCE hInstance = GetModuleHandle(NULL);
     const wchar_t CLASS_NAME[] = L"GomokuWindowClass";
 
-    WNDCLASS wc = {};
+    WNDCLASSEXW wc = {};
+    wc.cbSize = sizeof(WNDCLASSEX);  // 结构体的大小
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
 
-    RegisterClass(&wc);
+    RegisterClassExW(&wc);
 
-    HWND hwnd = CreateWindowEx(
+    HWND hwnd = CreateWindowExW(
         0, CLASS_NAME, L"Gomoku", WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, CELL_SIZE * BOARD_SIZE, CELL_SIZE * BOARD_SIZE,
         NULL, NULL, hInstance, NULL);

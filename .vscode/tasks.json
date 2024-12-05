@@ -6,14 +6,14 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "main.cpp",
-                "game.cpp",
-                "player.cpp",
-                "board.cpp",
-                "min_max.cpp",
-                "save_load.cpp",
+                "${fileDirname}\\*.cpp",
                 "-o",
-                "gomoku"
+                "gomoku",
+                "-std=c++23",
+                "-DUNICODE",  // 启用 Unicode 编译选项
+                "-D_UNICODE", // 启用 Unicode 编译选项
+                "-lgdi32",
+                "-luser32",
             ],
             "group": {
                 "kind": "build",
