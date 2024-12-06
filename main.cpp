@@ -3,11 +3,13 @@
 #include <vector>
 #include <iostream>
 #include "board.h"
+#include "game.h"
+#include "player.h"
+#include "min_max.h"
 
 const int BOARD_SIZE = 15;  // 棋盘大小
 const int CELL_SIZE = 40;   // 每个格子的大小
-Board board(BOARD_SIZE);    // 创建一个 Board 对象
-char currentPlayer = 'X';   // 当前玩家
+Game game(15);
 
 // 绘制棋盘
 void DrawBoard(HDC hdc) {
@@ -16,12 +18,12 @@ void DrawBoard(HDC hdc) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             // 绘制格子
             Rectangle(hdc, i * CELL_SIZE, j * CELL_SIZE, (i + 1) * CELL_SIZE, (j + 1) * CELL_SIZE);
-            if (board.getPiece(i, j) == 'X') {
+            if (game.getPiece(i, j) == 'X') {
                 MoveToEx(hdc, i * CELL_SIZE + 5, j * CELL_SIZE + 5, NULL);
                 LineTo(hdc, (i + 1) * CELL_SIZE - 5, (j + 1) * CELL_SIZE - 5);
                 MoveToEx(hdc, (i + 1) * CELL_SIZE - 5, j * CELL_SIZE + 5, NULL);
                 LineTo(hdc, i * CELL_SIZE + 5, (j + 1) * CELL_SIZE - 5);
-            } else if (board.getPiece(i, j) == 'O') {
+            } else if (game.getPiece(i, j) == 'O') {
                 Ellipse(hdc, i * CELL_SIZE + 5, j * CELL_SIZE + 5, (i + 1) * CELL_SIZE - 5, (j + 1) * CELL_SIZE - 5);
             }
         }
@@ -36,7 +38,7 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
             std::ofstream outFile("board.txt");
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << board.getPiece(i, j) << " ";
+                    outFile << game.getPiece(i, j) << " ";
                 }
                 outFile << "\n";
             }
@@ -55,7 +57,7 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
                     char piece;
                     inFile >> piece;
-                    board.placePiece(i, j, piece);
+                    game.board.placePiece(i, j, piece);
                 }
             }
             inFile.close();
@@ -64,8 +66,7 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
         break;
     case 3: // 重新开始
         // 清空棋盘，重新开始
-        board.clearBoard();
-        currentPlayer = 'X';
+        game.initial();
         InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
         break;
     case 4: // 退出
@@ -100,9 +101,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
         y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
 
-        if (x < BOARD_SIZE && y < BOARD_SIZE && board.getPiece(x, y) == '.') {
-            board.placePiece(x, y, currentPlayer);
-            currentPlayer = (currentPlayer == 'X') ? 'O' : 'X'; // 切换玩家
+        if (!game.isGameOver()&& x < BOARD_SIZE && y < BOARD_SIZE && game.board.getPiece(x, y) == '.'&&game.isHuman()) {
+            if(game.placePiece(x,y)){
+                if(game.board.checkWin(game.getCurrentPiece()))game.over();
+                else game.switchPlayer();
+            }
             InvalidateRect(hwnd, NULL, TRUE); // 请求重绘窗口
         }
         return 0;
