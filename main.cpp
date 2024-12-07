@@ -57,7 +57,7 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
                     char piece;
                     inFile >> piece;
-                    game.board.placePiece(i, j, piece);
+                    game.board.placePiece(i,j,piece);
                 }
             }
             inFile.close();
@@ -101,12 +101,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
         y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
 
-        if (!game.isGameOver()&& x < BOARD_SIZE && y < BOARD_SIZE && game.board.getPiece(x, y) == '.'&&game.isHuman()) {
+        if (!game.isGameOver()&& x < BOARD_SIZE && y < BOARD_SIZE && game.getPiece(x, y) == '.'&&game.isHuman()) {
             if(game.placePiece(x,y)){
-                if(game.board.checkWin(game.getCurrentPiece()))game.over();
-                else game.switchPlayer();
+                InvalidateRect(hwnd, NULL, TRUE); // 请求重绘窗口
+                if(game.board.checkWin(game.getCurrentPiece()))game.over(false);
+                else{
+                    if(game.board.isFull())game.over(true);
+                    else game.switchPlayer();
+                }
             }
-            InvalidateRect(hwnd, NULL, TRUE); // 请求重绘窗口
         }
         return 0;
     }
@@ -143,7 +146,7 @@ int main() {
 
     HWND hwnd = CreateWindowExW(
         0, CLASS_NAME, L"Gomoku", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, CELL_SIZE * BOARD_SIZE, CELL_SIZE * BOARD_SIZE,
+        CW_USEDEFAULT, CW_USEDEFAULT, CELL_SIZE * BOARD_SIZE+50, CELL_SIZE * BOARD_SIZE+80,
         NULL, NULL, hInstance, NULL);
 
     if (hwnd == NULL) {

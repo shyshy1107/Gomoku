@@ -25,8 +25,12 @@ void Game::switchPlayer() {
     currentPlayer = (currentPlayer == player1) ? player2 : player1;
     while(!isHuman()){
         currentPlayer->makeMove();
-        if(board.checkWin(currentPlayer->getPiece()))over();
-        currentPlayer = (currentPlayer == player1) ? player2 : player1;
+        refresh();
+        if(board.checkWin(currentPlayer->getPiece()))over(false);
+        else{
+            if(board.isFull())over(true);
+            currentPlayer = (currentPlayer == player1) ? player2 : player1;
+        }
     }
 }
 
@@ -59,8 +63,17 @@ char Game::getCurrentPiece()const{
     return currentPlayer->getPiece();
 }
 
-void Game::over(){
+void Game::over(bool isTie){
     gameOver=true;
-    if(isHuman())MessageBoxW(NULL,L"人类胜利",L"胜利",MB_OK | MB_ICONINFORMATION);
+    if(isTie)MessageBoxW(NULL,L"平局",L"平局",MB_OK | MB_ICONINFORMATION);
+    else if(isHuman())MessageBoxW(NULL,L"人类胜利",L"胜利",MB_OK | MB_ICONINFORMATION);
     else MessageBoxW(NULL,L"AI胜利",L"失败",MB_OK | MB_ICONINFORMATION);
+}
+
+void Game::refresh(){
+    InvalidateRect(hwnd, NULL, TRUE);
+}
+
+void Game::sethwnd(HWND hwnd){
+    this->hwnd=hwnd;
 }

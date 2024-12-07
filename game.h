@@ -3,6 +3,7 @@
 
 #include "board.h"
 #include "player.h"
+#include <windows.h>
 
 class Game {
 public:
@@ -16,9 +17,12 @@ public:
     void initial();
     bool isHuman()const;
     char getCurrentPiece()const;
-    void over();
+    void over(bool isTie);
+    void refresh();
+    void sethwnd(HWND hwnd);
 
 private:
+    HWND hwnd;
     Player* currentPlayer;  // 当前玩家
     Player* player1;  // 玩家1
     Player* player2;  // 玩家2
