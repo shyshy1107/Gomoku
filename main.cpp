@@ -42,6 +42,12 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
                 }
                 outFile << "\n";
             }
+            for (int i = 0; i < BOARD_SIZE; ++i) {
+                for (int j = 0; j < BOARD_SIZE; ++j) {
+                    outFile << game.board.cnt[i][j].CL << " ";
+                }
+                outFile << "\n";
+            }
             outFile.close();
             MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
         }
@@ -106,7 +112,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 InvalidateRect(hwnd, NULL, TRUE); // 请求重绘窗口
                 if(game.board.checkWin(game.getCurrentPiece()))game.over(false);
                 else{
-                    if(game.board.isFull())game.over(true);
+                    if(game.board.isFull())game.over(true); 
                     else game.switchPlayer();
                 }
             }
