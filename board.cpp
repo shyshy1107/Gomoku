@@ -58,7 +58,7 @@ bool Board::isValidMove(int x, int y,char piece) const {
     if(piece=='X'){
         if(checkjs(x,y,2))return false;
         if(checkWinFrom(x,y,piece))return true;
-        if(checkjs(x,y,1)||checkjs(x,y,0))return false;
+        if(checkjs(x,y,1))return false;
     }
     return true;
 }
@@ -192,7 +192,31 @@ bool Board::checkjs(int x,int y,int type)const{
         if(cnt[x][y].CL>=5)return true;
     }
     else{
-        if(cnt[x][y].sl[type]>=2)return true;
+        int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
+        int cnt33=0,cnt44=0;
+        for(int i=0;i<4;i++){
+            int flag33=0,flag44=0;
+            int cnt01=0,cnt02=0,cnt1=1;
+            int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
+            bool pos=isInBoard(xx1,yy1),neg=isInBoard(xx2,yy2);
+            while(cnt01<2||cnt02<2){
+                if(pos&&getPiece(xx1,yy1)=='.')cnt01++;
+                if(pos&&getPiece(xx1,yy1)=='X')cnt1++;
+                pos=isInBoard(xx1,yy1)&&cnt01<2;
+                if(pos)xx1+=dir[i][0],yy1+=dir[i][1];
+                if(cnt1==3&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
+                if(cnt1==4&&(cnt01==1||cnt02==1||(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
+                if(neg&&getPiece(xx2,yy2)=='.')cnt02++;
+                if(neg&&getPiece(xx2,yy2)=='X')cnt1++;
+                neg=isInBoard(xx2,yy2)&&cnt02<2;
+                if(neg)xx2-=dir[i][0],yy2-=dir[i][1];
+                if(cnt1==3&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
+                if(cnt1==4&&(cnt01==1||cnt02==1||(pos&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
+            }
+            if(flag33)cnt33++;
+            if(flag44)cnt44++;
+        }
+        if(cnt33>1||cnt44>1)return true;
     }
     return false;
 }
