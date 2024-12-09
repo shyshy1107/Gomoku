@@ -204,14 +204,15 @@ bool Board::checkjs(int x,int y,int type)const{
                 if(pos&&getPiece(xx1,yy1)=='X')cnt1++;
                 pos=isInBoard(xx1,yy1)&&cnt01<2;
                 if(pos)xx1+=dir[i][0],yy1+=dir[i][1];
-                if(cnt1==3&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
+                if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
                 if(neg&&getPiece(xx2,yy2)=='.')cnt02++;
                 if(neg&&getPiece(xx2,yy2)=='X')cnt1++;
                 neg=isInBoard(xx2,yy2)&&cnt02<2;
                 if(neg)xx2-=dir[i][0],yy2-=dir[i][1];
-                if(cnt1==3&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
+                if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(pos&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
+                if(!(pos||neg))break;
             }
             if(flag33)cnt33++;
             if(flag44)cnt44++;
