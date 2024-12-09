@@ -1,4 +1,5 @@
 #include "player.h"
+#include "min_max.h"
 #include <iostream>
 #include <limits.h>
 
@@ -44,10 +45,16 @@ void AIPlayer::makeMove() {
 
     // 落子
     board->placePiece(bestMoveX, bestMoveY, piece);*/
-    int x,y;
+    /*int x,y;
     do{
         x=rand()%(board->getSize()),y=rand()%(board->getSize());
-    }while(!board->placePiece(x,y,piece));
+    }while(!board->placePiece(x,y,piece));*/\
+    int score[25][25]={};
+    for(int i=0;i<board->getSize();i++){
+        for(int j=0;j<board->getSize();j++){
+            
+        }
+    }
 }
 
 int AIPlayer::minimax(int depth, bool isMaximizing) {

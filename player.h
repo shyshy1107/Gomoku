@@ -24,7 +24,6 @@ class AIPlayer : public Player {
 public:
     AIPlayer(Board* board, char piece);
     void makeMove() override;  // 计算机玩家的落子方法
-    int evaluateBoard();  // 评估棋盘状态
     int minimax(int depth, bool isMaximizing);  // Min-Max 算法
 };
 
