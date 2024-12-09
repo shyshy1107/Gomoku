@@ -130,6 +130,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 
     case WM_DESTROY:
+        if(!game.isGameOver()){
+            std::ofstream outFile("board.txt");
+            for (int i = 0; i < BOARD_SIZE; ++i) {
+                for (int j = 0; j < BOARD_SIZE; ++j) {
+                    outFile << game.getPiece(i, j) << " ";
+                }
+                outFile << "\n";
+            }
+            for (int i = 0; i < BOARD_SIZE; ++i) {
+                for (int j = 0; j < BOARD_SIZE; ++j) {
+                    outFile << game.board.cnt[i][j].CL << " ";
+                }
+                outFile << "\n";
+            }
+            outFile.close();
+            MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
+        }
         PostQuitMessage(0);
         return 0;
 
