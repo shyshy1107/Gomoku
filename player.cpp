@@ -25,27 +25,6 @@ void HumanPlayer::makeMove() {
 AIPlayer::AIPlayer(Board* board, char piece) : Player(board, piece) {}
 
 void AIPlayer::makeMove() {
-    // Min-Max 算法决策
-    /*int bestScore = INT_MIN;
-    int bestMoveX = -1, bestMoveY = -1;
-
-    for (int x = 0; x < board->getSize(); ++x) {
-        for (int y = 0; y < board->getSize(); ++y) {
-            if (board->getPiece(x, y) == '.') {
-                board->placePiece(x, y, piece);  // 试探性落子
-                int score = minimax(3, false);  // 评估
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMoveX = x;
-                    bestMoveY = y;
-                }
-                board->placePiece(x, y, '.');  // 撤回落子
-            }
-        }
-    }
-
-    // 落子
-    board->placePiece(bestMoveX, bestMoveY, piece);*/
     /*int x,y;
     do{
         x=rand()%(board->getSize()),y=rand()%(board->getSize());
@@ -57,12 +36,125 @@ void AIPlayer::makeMove() {
             if(board->getPiece(i,j)!='.')continue;
             int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
             for(int k=0;k<4;k++){
-                /*char pd1='.',pd2='.';
-                int cnt[2][2]={{0,1},{0,1}};//前一个表示方向后一个表示是否空白
+                char pd1='.',pd2='.';
+                int cnt[2][2]={{0,0},{0,0}};//前一个表示方向后一个表示是否空白
                 int flag1=0,flag2=0;
                 int xx1=i+dir[k][0],yy1=j+dir[k][1],xx2=i-dir[k][0],yy2=j-dir[k][1];
                 bool pos=board->isInBoard(xx1,yy1),neg=board->isInBoard(xx2,yy2);
-                if(pos){
+                if(board->isInBoard(xx1,yy1)){
+                    if(board->getPiece(xx1,yy1)!='.'){
+                        pd1=board->getPiece(xx1,yy1);
+                        cnt[0][1]++;
+                        while(board->isInBoard(xx1,yy1)){
+                            xx1+=dir[k][0],yy1+=dir[k][1];
+                            if(!board->isInBoard(xx1,yy1))break;
+                            if(board->getPiece(xx1,yy1)=='.'){
+                                cnt[0][0]++;
+                                if(cnt[0][0]>1){
+                                    flag1=2;
+                                    break;
+                                }
+                            }
+                            else if(board->getPiece(xx1,yy1)==pd1){
+                                cnt[0][1]++;
+                                if(cnt[0][0])flag1--;
+                            }
+                            else{
+                                flag1=cnt[0][1]-3;
+                                cnt[0][1]--;
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        cnt[1][0]++;
+                        xx1-=dir[k][0],yy1-=dir[k][1]; 
+                        if(board->isInBoard(xx1,yy1)){
+                            if(board->getPiece(xx1,yy1)!='.'){
+                                pd2=board->getPiece(xx1,yy1);
+                                cnt[0][1]++;
+                                while(board->isInBoard(xx1,yy1)){
+                                    xx1-=dir[k][0],yy1-=dir[k][1];
+                                    if(!board->isInBoard(xx1,yy1))break;
+                                    if(board->getPiece(xx1,yy1)=='.'){
+                                        flag1=1;
+                                        break;
+                                    }
+                                    else if(board->getPiece(xx1,yy1)==pd1){
+                                        cnt[0][1]++;
+                                        if(cnt[0][0])flag1--;
+                                    }
+                                    else{
+                                        flag1=cnt[0][1]-3;
+                                        cnt[0][1]--;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if(board->isInBoard(xx2,yy2)){
+                    if(board->getPiece(xx2,yy2)!='.'){
+                        pd2=board->getPiece(xx2,yy2);
+                        cnt[1][1]++;
+                        while(board->isInBoard(xx2,yy2)){
+                            xx2-=dir[k][0],yy2-=dir[k][1];
+                            if(!board->isInBoard(xx2,yy2))break;
+                            if(board->getPiece(xx2,yy2)=='.'){
+                                cnt[1][0]++;
+                                if(cnt[1][0]>1){
+                                    flag2=2;
+                                    break;
+                                }
+                            }
+                            else if(board->getPiece(xx2,yy2)==pd2){
+                                cnt[1][1]++;
+                                if(cnt[1][0])flag2--;
+                            }
+                            else{
+                                flag2=cnt[1][1]-3;
+                                cnt[1][1]--;
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        cnt[1][0]++;
+                        xx2-=dir[k][0],yy2-=dir[k][1]; 
+                        if(board->isInBoard(xx2,yy2)){
+                            if(board->getPiece(xx2,yy2)!='.'){
+                                pd2=board->getPiece(xx2,yy2);
+                                cnt[1][1]++;
+                                while(board->isInBoard(xx2,yy2)){
+                                    xx2-=dir[k][0],yy2-=dir[k][1];
+                                    if(!board->isInBoard(xx2,yy2))break;
+                                    if(board->getPiece(xx2,yy2)=='.'){
+                                        flag2=1;
+                                        break;
+                                    }
+                                    else if(board->getPiece(xx2,yy2)==pd2){
+                                        cnt[1][1]++;
+                                        if(cnt[1][0])flag2--;
+                                    }
+                                    else{
+                                        flag2=cnt[1][1]-3;
+                                        cnt[1][1]--;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if(pd1!=pd2)score[i][j]=std::max(score[i][j],std::max((pow(10,cnt[0][1])*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd1==piece?1:(pd1=='.'?0:500))*pow(5,flag1),(pow(10,cnt[1][1])*pow(0.2,cnt[1][0]+cnt[0][0]))*(pd2==piece?1:(pd2=='.'?0:500))*pow(5,flag2)));
+                else{
+                    if(pd1==piece)score[i][j]=std::max(score[i][j],(pow(10,cnt[0][1]+cnt[1][1])*pow(0.8,cnt[0][0]+cnt[1][0]>1?1:cnt[0][0]+cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:500))*pow(5,flag1+flag2));
+                    else score[i][j]=std::max(score[i][j],(pow(10,cnt[0][1])*pow(0.2,cnt[0][0]))*(pd1==piece?1:(pd1=='.'?0:500))*pow(5,flag1)+(pow(10,cnt[1][1])*pow(0.8,cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:500))*pow(5,flag2));
+                }
+                if(board->checkWinFrom(i,j,piece))score[i][j]=1e9;
+                if(board->checkWinFrom(i,j,oppo))score[i][j]=1e9-1;
+                /*if(pos){
                     if(board->getPiece(xx1,yy1)=='.'){
                         cnt[0][0]++;
                         xx1+=dir[k][0],yy1+=dir[k][1];

@@ -45,9 +45,9 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
             outFile << "\n";
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile<<std::setw(7) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
+                    outFile<<std::setw(12) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
                 }
-                outFile << "\n";
+                outFile << "\n\n";
             }
             outFile.close();
             MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
@@ -64,7 +64,7 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
                     char piece;
                     inFile >> piece;
-                    game.board.placePiece(i,j,piece);
+                    game.board.placePiece(j,i,piece);
                 }
             }
             inFile.close();
@@ -103,6 +103,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         ProcessMenuCommand(hwnd, wParam);
         return 0;
 
+    case WM_RBUTTONDOWN:{
+        x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
+        y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
+
+        if (x < BOARD_SIZE && y < BOARD_SIZE &&game.isHuman()) {
+            MessageBoxW(hwnd, std::to_wstring(dynamic_cast<AIPlayer*>(game.player2)->score[x][y]).c_str(), L"查分", MB_OK);
+        }
+        return 0;
+    }
+
     case WM_LBUTTONDOWN: {
         // 处理鼠标点击
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
@@ -116,6 +126,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                     if(game.board.isFull())game.over(true); 
                     else game.switchPlayer();
                 }
+            }
+            else{
+                if(game.board.checkjs(x,y,2))MessageBoxW(hwnd, L"这步棋是长连禁手!", L"禁手", MB_OK);
+                else if(game.board.checkjs(x,y,1))MessageBoxW(hwnd, L"这步棋是三三/四四禁手!", L"禁手", MB_OK);
             }
         }
         return 0;
