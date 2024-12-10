@@ -39,6 +39,7 @@ void Game::initial(){
     player1=new HumanPlayer(&board,'X');
     delete player2;
     player2=new AIPlayer(&board,'O');
+    dynamic_cast<AIPlayer*>(player2)->iniscore();
     currentPlayer=player1;
     gameOver=false;
 }

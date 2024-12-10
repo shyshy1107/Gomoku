@@ -19,12 +19,12 @@ public:
     void over(bool isTie);
     void refresh();
     void sethwnd(HWND hwnd);
+    Player* player2;  // 玩家2
 
 private:
     HWND hwnd;
     Player* currentPlayer;  // 当前玩家
     Player* player1;  // 玩家1
-    Player* player2;  // 玩家2
     bool gameOver;  // 游戏是否结束
 };
 

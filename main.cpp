@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include "board.h"
 #include "game.h"
 #include "player.h"
@@ -37,21 +38,14 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
             std::ofstream outFile("board.txt");
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.getPiece(j, i) << " ";
+                    outFile<<std::setw(7) << game.getPiece(j, i) << " ";
                 }
                 outFile << "\n";
             }
             outFile << "\n";
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.board.cnt[j][i].CL << " ";
-                }
-                outFile << "\n";
-            }
-            outFile << "\n";
-            for (int i = 0; i < BOARD_SIZE; ++i) {
-                for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.board.checkjs(j,i,1) << " ";
+                    outFile<<std::setw(7) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
                 }
                 outFile << "\n";
             }
