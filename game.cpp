@@ -10,7 +10,7 @@ Game::Game(int boardSize) : board(boardSize), gameOver(false) {
 
 void Game::switchPlayer() {
     currentPlayer = (currentPlayer == player1) ? player2 : player1;
-    while(!isHuman()){
+    while(!isGameOver()&&!isHuman()){
         currentPlayer->makeMove();
         refresh();
         if(board.checkWin(currentPlayer->getPiece()))over(false);
@@ -39,6 +39,7 @@ void Game::initial(){
     player1=new HumanPlayer(&board,'X');
     delete player2;
     player2=new AIPlayer(&board,'O');
+    currentPlayer=player1;
     gameOver=false;
 }
 

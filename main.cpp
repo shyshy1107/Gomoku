@@ -37,13 +37,21 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
             std::ofstream outFile("board.txt");
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.getPiece(i, j) << " ";
+                    outFile << game.getPiece(j, i) << " ";
                 }
                 outFile << "\n";
             }
+            outFile << "\n";
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.board.cnt[i][j].CL << " ";
+                    outFile << game.board.cnt[j][i].CL << " ";
+                }
+                outFile << "\n";
+            }
+            outFile << "\n";
+            for (int i = 0; i < BOARD_SIZE; ++i) {
+                for (int j = 0; j < BOARD_SIZE; ++j) {
+                    outFile << game.board.checkjs(j,i,1) << " ";
                 }
                 outFile << "\n";
             }

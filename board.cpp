@@ -33,6 +33,11 @@ void Board::clearBoard(){
             grid[i][j] = '.';
         }
     }
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            cnt[i][j].CL=cnt[i][j].cl[0]=cnt[i][j].cl[1]=cnt[i][j].cl[2]=cnt[i][j].cl[3]=cnt[i][j].cl[4]=cnt[i][j].cl[5]=cnt[i][j].cl[6]=cnt[i][j].cl[7]=0;
+        }
+    }
 }
 
 char Board::getPiece(int x, int y) const {
@@ -203,14 +208,16 @@ bool Board::checkjs(int x,int y,int type)const{
             bool pos=isInBoard(xx1,yy1),neg=isInBoard(xx2,yy2);
             while(cnt01<2||cnt02<2){
                 if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='.')cnt01++;
-                if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='X')cnt1++;
-                pos=isInBoard(xx1,yy1)&&cnt01<2;
+                else if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='X')cnt1++;
+                else pos=false;
+                pos=pos&&isInBoard(xx1,yy1)&&cnt01<2;
                 if(pos)xx1+=dir[i][0],yy1+=dir[i][1];
                 if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
                 if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='.')cnt02++;
-                if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='X')cnt1++;
-                neg=isInBoard(xx2,yy2)&&cnt02<2;
+                else if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='X')cnt1++;
+                else neg=false;
+                neg=neg&&isInBoard(xx2,yy2)&&cnt02<2;
                 if(neg)xx2-=dir[i][0],yy2-=dir[i][1];
                 if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(pos&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
