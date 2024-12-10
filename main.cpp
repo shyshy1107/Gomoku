@@ -5,7 +5,6 @@
 #include "board.h"
 #include "game.h"
 #include "player.h"
-#include "min_max.h"
 
 const int BOARD_SIZE = 15;  // 棋盘大小
 const int CELL_SIZE = 40;   // 每个格子的大小

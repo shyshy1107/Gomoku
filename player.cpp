@@ -1,7 +1,7 @@
 #include "player.h"
-#include "min_max.h"
 #include <iostream>
 #include <limits.h>
+#include <math.h>
 
 Player::Player(Board* board, char piece) : board(board), piece(piece) {}
 
@@ -48,15 +48,114 @@ void AIPlayer::makeMove() {
     /*int x,y;
     do{
         x=rand()%(board->getSize()),y=rand()%(board->getSize());
-    }while(!board->placePiece(x,y,piece));*/\
-    int score[25][25]={};
-    for(int i=0;i<board->getSize();i++){
-        for(int j=0;j<board->getSize();j++){
-            
+    }while(!board->placePiece(x,y,piece));*/
+    double score[25][25]={};
+    char oppo=(piece=='X'?'O':'X');
+        for(int i=0;i<board->getSize();i++){
+            for(int j=0;j<board->getSize();j++){
+                if(board->getPiece(i,j)!='.')continue;
+                int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
+                for(int k=0;k<4;k++){
+                    char pd='.';
+                    int cnt0=0,cnt1=0;
+                    int xx1=i+dir[k][0],yy1=j+dir[k][1],xx2=i-dir[k][0],yy2=j-dir[k][1];
+                    if(board->isInBoard(xx1,yy1)){
+                        if(board->getPiece(xx1,yy1)!='.'){
+                            pd=board->getPiece(xx1,yy1);
+                            cnt1++;
+                            while(board->isInBoard(xx1,yy1)){
+                                xx1+=dir[k][0],yy1+=dir[k][1];
+                                if(!board->isInBoard(xx1,yy1))break;
+                                if(board->getPiece(xx1,yy1)=='.'){
+                                    cnt0++;
+                                    if(cnt0>1)break;
+                                }
+                                else if(board->getPiece(xx1,yy1)==pd)cnt1++;
+                                else break;
+                            }
+                            score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
+                            cnt0=cnt1=0;
+                        }
+                    else{
+                        cnt0++;
+                        xx1-=dir[k][0],yy1-=dir[k][1]; 
+                        if(board->isInBoard(xx1,yy1)){
+                            if(board->getPiece(xx1,yy1)!='.'){
+                                pd=board->getPiece(xx1,yy1);
+                                cnt1++;
+                                while(board->isInBoard(xx1,yy1)){
+                                    xx1-=dir[k][0],yy1-=dir[k][1];
+                                    if(!board->isInBoard(xx1,yy1))break;
+                                    if(board->getPiece(xx1,yy1)=='.'){
+                                        cnt0++;
+                                        if(cnt0>1)break;
+                                    }
+                                    else if(board->getPiece(xx1,yy1)==pd)cnt1++;
+                                    else break;
+                                }
+                                score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
+                                cnt0=cnt1=0;
+                            }
+                        }
+                    }
+                }
+                if(board->isInBoard(xx2,yy2)){
+                    if(board->getPiece(xx2,yy2)!='.'){
+                        pd=board->getPiece(xx2,yy2);
+                        cnt1++;
+                        while(board->isInBoard(xx2,yy2)){
+                            xx2-=dir[k][0],yy2-=dir[k][1];
+                            if(!board->isInBoard(xx2,yy2))break;
+                            if(board->getPiece(xx2,yy2)=='.'){
+                                cnt0++;
+                                if(cnt0>1)break;
+                            }
+                            else if(board->getPiece(xx2,yy2)==pd)cnt1++;
+                            else break;
+                        }
+                        score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
+                        cnt0=cnt1=0;
+                    }
+                    else{
+                        cnt0++;
+                        xx2-=dir[k][0],yy2-=dir[k][1]; 
+                        if(board->isInBoard(xx2,yy2)){
+                            if(board->getPiece(xx2,yy2)!='.'){
+                                pd=board->getPiece(xx2,yy2);
+                                cnt1++;
+                                while(board->isInBoard(xx2,yy2)){
+                                    xx2-=dir[k][0],yy2-=dir[k][1];
+                                    if(!board->isInBoard(xx2,yy2))break;
+                                    if(board->getPiece(xx2,yy2)=='.'){
+                                        cnt0++;
+                                        if(cnt0>1)break;
+                                    }
+                                    else if(board->getPiece(xx2,yy2)==pd)cnt1++;
+                                    else break;
+                                }
+                                score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
+                                cnt0=cnt1=0;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+    int bestscore=0,bestx,besty;
+    for(int i=0;i<board->getSize();i++){
+        for(int j=0;j<board->getSize();j++){
+            if(board->getPiece(i,j)!='.')continue;
+            if(board->checkjs(i,j,0)||board->checkjs(i,j,1)||board->checkjs(i,j,2))score[i][j]=0;
+            if(score[i][j]>bestscore){
+                bestscore=score[i][j];
+                bestx=i;
+                besty=j;
+            }
+        }
+    }
+    board->placePiece(bestx,besty,piece);
 }
-
 int AIPlayer::minimax(int depth, bool isMaximizing) {
     // Min-Max 算法实现
     // 返回当前局面评分

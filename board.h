@@ -16,6 +16,7 @@ public:
     void clearBoard();
     bool checkWinFrom(int x, int y, char piece)const;
     bool isInBoard(int x,int y)const;
+    bool checkjs(int x,int y,int type)const;
     struct js
     {
         int cl[8],sl[2];
@@ -31,7 +32,6 @@ private:
     bool checkDiagonal1(int x, int y, char piece)const;
     bool checkDiagonal2(int x, int y, char piece)const;
     void updatecnt(int x,int y);
-    bool checkjs(int x,int y,int type)const;
 };
 
 #endif // BOARD_H

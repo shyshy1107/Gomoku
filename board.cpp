@@ -155,33 +155,34 @@ bool Board::checkDiagonal2(int x, int y, char piece)const {
 }
 
 void Board::updatecnt(int x,int y){
-    if(getPiece(x,y)!='X')return;
-    int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
-    for(int i=0;i<4;i++){
-        int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
-        int cnt1=0,cnt2=0;
-        bool pos=(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='X'),neg=(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='X');
-        while(pos){
-            cnt1++;
-            xx1+=dir[i][0],yy1+=dir[i][1];
-            pos=(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='X');
+    if(getPiece(x,y)=='X'){
+        int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
+        for(int i=0;i<4;i++){
+            int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
+            int cnt1=0,cnt2=0;
+            bool pos=(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='X'),neg=(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='X');
+            while(pos){
+                cnt1++;
+                xx1+=dir[i][0],yy1+=dir[i][1];
+                pos=(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='X');
+            }
+            while(neg){
+                cnt2++;
+                xx2-=dir[i][0],yy2-=dir[i][1];
+                neg=(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='X');
+            }
+            if(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.'){
+                cnt[xx1][yy1].cl[i+4]+=1+cnt2;
+            }
+            if(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='.'){
+                cnt[xx2][yy2].cl[i]+=1+cnt1;
+            }
         }
-        while(neg){
-            cnt2++;
-            xx2-=dir[i][0],yy2-=dir[i][1];
-            neg=(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='X');
-        }
-        if(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.'){
-            cnt[xx1][yy1].cl[i+4]+=1+cnt2;
-        }
-        if(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='.'){
-            cnt[xx2][yy2].cl[i]+=1+cnt1;
-        }
-    }
-    for(int i=0;i<15;i++){
-        for(int j=0;j<15;j++){
-            for(int k=0;k<4;k++){
-                cnt[i][j].CL=std::max(cnt[i][j].CL,cnt[i][j].cl[k]+cnt[i][j].cl[k+4]);
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                for(int k=0;k<4;k++){
+                    cnt[i][j].CL=std::max(cnt[i][j].CL,cnt[i][j].cl[k]+cnt[i][j].cl[k+4]);
+                }
             }
         }
     }
@@ -200,14 +201,14 @@ bool Board::checkjs(int x,int y,int type)const{
             int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
             bool pos=isInBoard(xx1,yy1),neg=isInBoard(xx2,yy2);
             while(cnt01<2||cnt02<2){
-                if(pos&&getPiece(xx1,yy1)=='.')cnt01++;
-                if(pos&&getPiece(xx1,yy1)=='X')cnt1++;
+                if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='.')cnt01++;
+                if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='X')cnt1++;
                 pos=isInBoard(xx1,yy1)&&cnt01<2;
                 if(pos)xx1+=dir[i][0],yy1+=dir[i][1];
                 if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
-                if(neg&&getPiece(xx2,yy2)=='.')cnt02++;
-                if(neg&&getPiece(xx2,yy2)=='X')cnt1++;
+                if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='.')cnt02++;
+                if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='X')cnt1++;
                 neg=isInBoard(xx2,yy2)&&cnt02<2;
                 if(neg)xx2-=dir[i][0],yy2-=dir[i][1];
                 if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
