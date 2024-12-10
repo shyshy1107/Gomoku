@@ -50,6 +50,21 @@ void AIPlayer::makeMove() {
         x=rand()%(board->getSize()),y=rand()%(board->getSize());
     }while(!board->placePiece(x,y,piece));*/
     double score[25][25]={};
+    for(int i=0;i<board->getSize();i++){
+        for(int j=0;j<board->getSize();j++){
+            score[i][j]+=1;
+        }
+    }
+    for(int i=3;i<board->getSize()-3;i++){
+        for(int j=3;j<board->getSize()-3;j++){
+            score[i][j]+=5;
+        }
+    }
+    for(int i=5;i<board->getSize()-5;i++){
+        for(int j=5;j<board->getSize()-5;j++){
+            score[i][j]+=10;
+        }
+    }
     char oppo=(piece=='X'?'O':'X');
         for(int i=0;i<board->getSize();i++){
             for(int j=0;j<board->getSize();j++){
@@ -63,17 +78,24 @@ void AIPlayer::makeMove() {
                         if(board->getPiece(xx1,yy1)!='.'){
                             pd=board->getPiece(xx1,yy1);
                             cnt1++;
+                            int flag=0;//0指被挡住1指空格
                             while(board->isInBoard(xx1,yy1)){
                                 xx1+=dir[k][0],yy1+=dir[k][1];
                                 if(!board->isInBoard(xx1,yy1))break;
                                 if(board->getPiece(xx1,yy1)=='.'){
                                     cnt0++;
-                                    if(cnt0>1)break;
+                                    if(cnt0>1){
+                                        flag=1;
+                                        break;
+                                    }
                                 }
                                 else if(board->getPiece(xx1,yy1)==pd)cnt1++;
-                                else break;
+                                else{
+                                    cnt1--;
+                                    break;
+                                }
                             }
-                            score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
+                            score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2)*pow(10,flag);
                             cnt0=cnt1=0;
                         }
                     else{
@@ -91,7 +113,10 @@ void AIPlayer::makeMove() {
                                         if(cnt0>1)break;
                                     }
                                     else if(board->getPiece(xx1,yy1)==pd)cnt1++;
-                                    else break;
+                                    else{
+                                        cnt1--;
+                                        break;
+                                    }
                                 }
                                 score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
                                 cnt0=cnt1=0;
@@ -102,18 +127,25 @@ void AIPlayer::makeMove() {
                 if(board->isInBoard(xx2,yy2)){
                     if(board->getPiece(xx2,yy2)!='.'){
                         pd=board->getPiece(xx2,yy2);
+                        int flag=0;//0指被挡住1指空格
                         cnt1++;
                         while(board->isInBoard(xx2,yy2)){
                             xx2-=dir[k][0],yy2-=dir[k][1];
                             if(!board->isInBoard(xx2,yy2))break;
                             if(board->getPiece(xx2,yy2)=='.'){
                                 cnt0++;
-                                if(cnt0>1)break;
+                                if(cnt0>1){
+                                    flag=1;
+                                    break;
+                                }
                             }
                             else if(board->getPiece(xx2,yy2)==pd)cnt1++;
-                            else break;
+                            else{
+                                cnt1--;
+                                break;
+                            }
                         }
-                        score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
+                        score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2)*pow(10,flag);
                         cnt0=cnt1=0;
                     }
                     else{
@@ -131,7 +163,10 @@ void AIPlayer::makeMove() {
                                         if(cnt0>1)break;
                                     }
                                     else if(board->getPiece(xx2,yy2)==pd)cnt1++;
-                                    else break;
+                                    else{
+                                        cnt1--;
+                                        break;
+                                    }
                                 }
                                 score[i][j]+=(pow(10,cnt1)*pow(0.3,cnt0))*(pd==piece?1:1.2);
                                 cnt0=cnt1=0;

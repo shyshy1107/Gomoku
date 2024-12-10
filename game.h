@@ -9,7 +9,6 @@ class Game {
 public:
     Game(int boardSize = 15);
     Board board;
-    void start();  // 启动游戏
     void switchPlayer();  // 切换玩家
     bool isGameOver() const;  // 判断游戏是否结束
     char getPiece(int x,int y)const;

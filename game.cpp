@@ -8,19 +8,6 @@ Game::Game(int boardSize) : board(boardSize), gameOver(false) {
     currentPlayer = player1;
 }
 
-void Game::start() {
-    while (!gameOver) {
-        board.display();
-        currentPlayer->makeMove();
-        if (board.isFull()) {
-            std::cout << "It's a draw!" << std::endl;
-            break;
-        }
-        gameOver = board.checkWin(currentPlayer->getPiece());
-        switchPlayer();
-    }
-}
-
 void Game::switchPlayer() {
     currentPlayer = (currentPlayer == player1) ? player2 : player1;
     while(!isHuman()){

@@ -193,6 +193,7 @@ bool Board::checkjs(int x,int y,int type)const{
         if(cnt[x][y].CL>=5)return true;
     }
     else{
+        if(checkWinFrom(x,y,'X'))return false;
         int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
         int cnt33=0,cnt44=0;
         for(int i=0;i<4;i++){
