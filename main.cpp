@@ -30,12 +30,8 @@ void DrawBoard(HDC hdc) {
     }
 }
 
-// 菜单命令处理
-void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
-    switch (LOWORD(wParam)) {
-    case 1: // 存盘
-        {
-            std::ofstream outFile("board.txt");
+void save1(HWND hwnd){
+     std::ofstream outFile("board.txt");
             for (int i = 0; i < BOARD_SIZE; ++i) {
                 for (int j = 0; j < BOARD_SIZE; ++j) {
                     outFile<<std::setw(7) << game.getPiece(j, i) << " ";
@@ -51,35 +47,53 @@ void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
             }
             outFile.close();
             MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
-        }
-        break;
-    case 2: // 读盘
-        {
-            std::ifstream inFile("board.txt");
-            if (!inFile) {
-                MessageBoxW(hwnd, L"Failed to load the game!", L"Load", MB_OK);
-                return;
+}
+
+// 菜单命令处理
+void ProcessMenuCommand(HWND hwnd, WPARAM wParam) {
+    switch (LOWORD(wParam)) {
+        case 1: // 存盘
+            {
+                save1(hwnd);
             }
-            for (int i = 0; i < BOARD_SIZE; ++i) {
-                for (int j = 0; j < BOARD_SIZE; ++j) {
-                    char piece;
-                    inFile >> piece;
-                    game.board.placePiece(j,i,piece);
+            break;
+        case 2: // 读盘
+            {
+                std::ifstream inFile("board.txt");
+                if (!inFile) {
+                    MessageBoxW(hwnd, L"Failed to load the game!", L"Load", MB_OK);
+                    return;
                 }
+                for (int i = 0; i < BOARD_SIZE; ++i) {
+                    for (int j = 0; j < BOARD_SIZE; ++j) {
+                        char piece;
+                        inFile >> piece;
+                        game.board.placePiece(j,i,piece);
+                    }
+                }
+                inFile.close();
+                InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
             }
-            inFile.close();
+            break;
+        case 3: // 重新开始
+            // 清空棋盘，重新开始
+            game.initial();
             InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
-        }
-        break;
-    case 3: // 重新开始
-        // 清空棋盘，重新开始
-        game.initial();
-        InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
-        break;
-    case 4: // 退出
-        PostMessage(hwnd, WM_CLOSE, 0, 0);
-        break;
+            break;
+        case 4: // 退出
+            PostMessage(hwnd, WM_CLOSE, 0, 0);
+            break;
+        case 5: // 悔棋
+            {
+                if (!game.board.hq()) {
+                    MessageBoxW(hwnd, L"还没有下棋", L"悔棋", MB_OK);
+                    return;
+                }
+                InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
+            }
+            break;
     }
+    
 }
 
 // 窗口过程函数
@@ -95,6 +109,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             AppendMenuW(hMenu, MF_STRING, 2, L"Load Game");
             AppendMenuW(hMenu, MF_STRING, 3, L"Restart Game");
             AppendMenuW(hMenu, MF_STRING, 4, L"Exit");
+            AppendMenuW(hMenu, MF_STRING, 5, L"悔棋");
             SetMenu(hwnd, hMenu);
         }
         return 0;
@@ -124,7 +139,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 if(game.board.checkWin(game.getCurrentPiece()))game.over(false);
                 else{
                     if(game.board.isFull())game.over(true); 
-                    else game.switchPlayer();
+                    else {
+                        game.switchPlayer();
+                    }
                 }
             }
             else{
@@ -145,23 +162,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 
     case WM_DESTROY:
-        if(!game.isGameOver()){
-            std::ofstream outFile("board.txt");
-            for (int i = 0; i < BOARD_SIZE; ++i) {
-                for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.getPiece(i, j) << " ";
-                }
-                outFile << "\n";
-            }
-            for (int i = 0; i < BOARD_SIZE; ++i) {
-                for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile << game.board.cnt[i][j].CL << " ";
-                }
-                outFile << "\n";
-            }
-            outFile.close();
-            MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
-        }
+        if(!game.isGameOver())save1(hwnd);
         PostQuitMessage(0);
         return 0;
 

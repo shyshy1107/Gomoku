@@ -147,10 +147,10 @@ void AIPlayer::makeMove() {
                         }
                     }
                 }
-                if(pd1!=pd2)score[i][j]=std::max(score[i][j],std::max((pow(10,cnt[0][1])*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd1==piece?1:(pd1=='.'?0:500))*pow(5,flag1),(pow(10,cnt[1][1])*pow(0.2,cnt[1][0]+cnt[0][0]))*(pd2==piece?1:(pd2=='.'?0:500))*pow(5,flag2)));
+                if(pd1!=pd2)score[i][j]=std::max(score[i][j],std::max((pow(10,cnt[0][1])*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd1==piece?1:(pd1=='.'?0:300))*pow(5,flag1),(pow(10,cnt[1][1])*pow(0.2,cnt[1][0]+cnt[0][0]))*(pd2==piece?1:(pd2=='.'?0:300))*pow(5,flag2)));
                 else{
-                    if(pd1==piece)score[i][j]=std::max(score[i][j],(pow(10,cnt[0][1]+cnt[1][1])*pow(0.8,cnt[0][0]+cnt[1][0]>1?1:cnt[0][0]+cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:500))*pow(5,flag1+flag2));
-                    else score[i][j]=std::max(score[i][j],(pow(10,cnt[0][1])*pow(0.2,cnt[0][0]))*(pd1==piece?1:(pd1=='.'?0:500))*pow(5,flag1)+(pow(10,cnt[1][1])*pow(0.8,cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:500))*pow(5,flag2));
+                    if(pd1==piece)score[i][j]=std::max(score[i][j],(pow(10,cnt[0][1]+cnt[1][1])*pow(0.8,cnt[0][0]+cnt[1][0]>1?1:cnt[0][0]+cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:300))*pow(5,flag1+flag2));
+                    else score[i][j]=std::max(score[i][j],(pow(10,cnt[0][1])*pow(0.2,cnt[0][0]))*(pd1==piece?1:(pd1=='.'?0:300))*pow(5,flag1)+(pow(10,cnt[1][1])*pow(0.8,cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:300))*pow(5,flag2));
                 }
                 if(board->checkWinFrom(i,j,piece))score[i][j]=1e9;
                 if(board->checkWinFrom(i,j,oppo))score[i][j]=1e9-1;

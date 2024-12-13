@@ -2,7 +2,7 @@
 #define BOARD_H
 
 #include <vector>
-
+#include<stack>
 class Board {
 public:
     Board(int size = 15);  // 构造函数，初始化棋盘
@@ -17,6 +17,7 @@ public:
     bool checkWinFrom(int x, int y, char piece)const;
     bool isInBoard(int x,int y)const;
     bool checkjs(int x,int y,int type)const;
+    bool hq();
     struct js
     {
         int cl[8],sl[2];
@@ -26,6 +27,7 @@ public:
 private:
     int size;  // 棋盘大小
     int lastX,lastY;
+    std::stack<std::pair<int,int>> op;
     std::vector<std::vector<char>> grid;  // 棋盘存储
     bool checkHorizontal(int x, int y, char piece)const;
     bool checkVertical(int x, int y, char piece)const;

@@ -18,6 +18,12 @@ bool Board::placePiece(int x, int y, char piece) {
         lastX=x;
         lastY=y;
         updatecnt(x,y);
+        if(piece!='.')op.push({x,y});
+        else{
+            for(int i=0;i<size;i++){
+                for(int j=0;j<size;j++)updatecnt(i,j);
+            }
+        }
         return true;
     }
     else return false;
@@ -25,6 +31,22 @@ bool Board::placePiece(int x, int y, char piece) {
 
 int Board::getSize()const{
     return size;
+}
+
+bool Board::hq(){
+    if(!op.empty()){
+        int x=op.top().first,y=op.top().second;
+        placePiece(x,y,'.');
+        op.pop();
+    }
+    else return false;
+    if(!op.empty()){
+        int x=op.top().first,y=op.top().second;
+        placePiece(x,y,'.');
+        op.pop();
+        return true;
+    }
+    else return false;
 }
 
 void Board::clearBoard(){
@@ -38,6 +60,7 @@ void Board::clearBoard(){
             cnt[i][j].CL=cnt[i][j].cl[0]=cnt[i][j].cl[1]=cnt[i][j].cl[2]=cnt[i][j].cl[3]=cnt[i][j].cl[4]=cnt[i][j].cl[5]=cnt[i][j].cl[6]=cnt[i][j].cl[7]=0;
         }
     }
+    while(!op.empty())op.pop();
 }
 
 char Board::getPiece(int x, int y) const {
@@ -59,7 +82,7 @@ bool Board::checkWin(char piece) {
 
 bool Board::isValidMove(int x, int y,char piece) const {
     if(!isInBoard(x,y))return false;
-    if(grid[x][y]!='.')return false;
+    if(piece!='.'&&grid[x][y]!='.')return false;
     if(piece=='X'){
         if(checkjs(x,y,2))return false;
         if(checkWinFrom(x,y,piece))return true;
