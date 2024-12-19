@@ -1,29 +1,13 @@
 #include "board.h"
-#include <iostream>
 
 Board::Board(int size) : size(size), grid(size, std::vector<char>(size, '.')) {}
-
-void Board::display() const {
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            std::cout << grid[i][j] << ' ';
-        }
-        std::cout << std::endl;
-    }
-}
 
 bool Board::placePiece(int x, int y, char piece) {
     if (isValidMove(x,y,piece)) {
         grid[x][y] = piece;
         lastX=x;
         lastY=y;
-        updatecnt(x,y);
         if(piece!='.')op.push({x,y});
-        else{
-            for(int i=0;i<size;i++){
-                for(int j=0;j<size;j++)updatecnt(i,j);
-            }
-        }
         return true;
     }
     else return false;
@@ -55,16 +39,12 @@ void Board::clearBoard(){
             grid[i][j] = '.';
         }
     }
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            cnt[i][j].CL=cnt[i][j].cl[0]=cnt[i][j].cl[1]=cnt[i][j].cl[2]=cnt[i][j].cl[3]=cnt[i][j].cl[4]=cnt[i][j].cl[5]=cnt[i][j].cl[6]=cnt[i][j].cl[7]=0;
-        }
-    }
     while(!op.empty())op.pop();
 }
 
 char Board::getPiece(int x, int y) const {
-    return grid[x][y];
+    if(isInBoard(x,y))return grid[x][y];
+    return '.';
 }
 
 bool Board::isFull() const {
@@ -92,133 +72,42 @@ bool Board::isValidMove(int x, int y,char piece) const {
 }
 
 bool Board::checkWinFrom(int x, int y, char piece) const{
-    // 现在可以利用传入的坐标 (x, y) 和 piece 来判断是否有五子连线
-    // 例如，检查该位置的横竖斜连成五子的条件
-    return checkHorizontal(x, y, piece) || checkVertical(x, y, piece) || 
-checkDiagonal1(x, y, piece) || checkDiagonal2(x, y, piece);
-}
-
-bool Board::checkHorizontal(int x, int y, char piece)const {
-    int count = 1;  // 包括当前的位置
-    // 向右检查
-    for (int i = 1; i < 5; ++i) {
-        if (x + i < size && grid[x + i][y] == piece) {
-            count++;
-        } else {
-            break;
+    int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
+    for(int i=0;i<4;i++){
+        int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
+        bool pos=isInBoard(xx1,yy1),neg=isInBoard(xx2,yy2);
+        int cnt=1;
+        while(pos||neg){
+            if(pos&&getPiece(xx1,yy1)==piece)cnt++;
+            else pos=false;
+            if(neg&&getPiece(xx2,yy2)==piece)cnt++;
+            else neg=false;
+            xx1+=dir[i][0],yy1+=dir[i][1],xx2-=dir[i][0],yy2-=dir[i][1];
+            pos=pos&&isInBoard(xx1,yy1),neg=neg&&isInBoard(xx2,yy2);
         }
+        if(cnt>=5)return true;
     }
-    // 向左检查
-    for (int i = 1; i < 5; ++i) {
-        if (x - i >= 0 && grid[x - i][y] == piece) {
-        count++;
-        } else {
-            break;
-        }
-    }
-    return count >= 5;
-}
-
-bool Board::checkVertical(int x, int y, char piece)const {
-    int count = 1;  // 包括当前的位置
-    // 向下检查
-    for (int i = 1; i < 5; ++i) {
-        if (y + i < size && grid[x][y + i] == piece) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    // 向上检查
-    for (int i = 1; i < 5; ++i) {
-        if (y - i >= 0 && grid[x][y - i] == piece) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    return count >= 5;
-}
-
-bool Board::checkDiagonal1(int x, int y, char piece)const {
-    int count = 1;  // 包括当前的位置
-    // 向右下检查
-    for (int i = 1; i < 5; ++i) {
-        if (x + i < size && y + i < size && grid[x + i][y + i] == piece) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    // 向左上检查
-    for (int i = 1; i < 5; ++i) {
-        if (x - i >= 0 && y - i >= 0 && grid[x - i][y - i] == piece) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    return count >= 5;
-}
-
-bool Board::checkDiagonal2(int x, int y, char piece)const {
-    int count = 1;  // 包括当前的位置
-    // 向右上检查
-    for (int i = 1; i < 5; ++i) {
-        if (x + i < size && y - i >= 0 && grid[x + i][y - i] == piece) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    // 向左下检查
-    for (int i = 1; i < 5; ++i) {
-        if (x - i >= 0 && y + i < size && grid[x - i][y + i] == piece) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    return count >= 5;
-}
-
-void Board::updatecnt(int x,int y){
-    if(getPiece(x,y)=='X'){
-        int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
-        for(int i=0;i<4;i++){
-            int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
-            int cnt1=0,cnt2=0;
-            bool pos=(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='X'),neg=(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='X');
-            while(pos){
-                cnt1++;
-                xx1+=dir[i][0],yy1+=dir[i][1];
-                pos=(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='X');
-            }
-            while(neg){
-                cnt2++;
-                xx2-=dir[i][0],yy2-=dir[i][1];
-                neg=(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='X');
-            }
-            if(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.'){
-                cnt[xx1][yy1].cl[i+4]+=1+cnt2;
-            }
-            if(isInBoard(xx2,yy2)&&getPiece(xx2,yy2)=='.'){
-                cnt[xx2][yy2].cl[i]+=1+cnt1;
-            }
-        }
-        for(int i=0;i<15;i++){
-            for(int j=0;j<15;j++){
-                for(int k=0;k<4;k++){
-                    cnt[i][j].CL=std::max(cnt[i][j].CL,cnt[i][j].cl[k]+cnt[i][j].cl[k+4]);
-                }
-            }
-        }
-    }
+    return false;
 }
 
 bool Board::checkjs(int x,int y,int type)const{
     if(type==2){
-        if(cnt[x][y].CL>=5)return true;
+        int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
+        for(int i=0;i<4;i++){
+            int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
+            bool pos=isInBoard(xx1,yy1),neg=isInBoard(xx2,yy2);
+            int cnt=0;
+            while(pos||neg){
+                if(pos&&getPiece(xx1,yy1)=='X')cnt++;
+                else pos=false;
+                if(neg&&getPiece(xx2,yy2)=='X')cnt++;
+                else neg=false;
+                xx1+=dir[i][0],yy1+=dir[i][1],xx2-=dir[i][0],yy2-=dir[i][1];
+                pos=pos&&isInBoard(xx1,yy1),neg=neg&&isInBoard(xx2,yy2);
+            }
+            if(cnt>=5)return true;
+        }
+        return false;
     }
     else{
         if(checkWinFrom(x,y,'X'))return false;

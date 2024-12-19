@@ -16,8 +16,8 @@ void Game::switchPlayer() {
         if(board.checkWin(currentPlayer->getPiece()))over(false);
         else{
             if(board.isFull())over(true);
-            currentPlayer = (currentPlayer == player1) ? player2 : player1;
         }
+        currentPlayer = (currentPlayer == player1) ? player2 : player1;
     }
 }
 
@@ -65,4 +65,28 @@ void Game::refresh(){
 
 void Game::sethwnd(HWND hwnd){
     this->hwnd=hwnd;
+}
+
+bool Game::hq(){
+    if(board.hq()){
+        gameOver=false;
+        return true;
+    }
+    return false;
+}
+
+void Game::xq(int x,int y,char piece){
+    board.placePiece(x,y,piece);
+}
+
+bool Game::checkWin(char piece){
+    return board.checkWin(piece);
+}
+
+bool Game::isFull()const{
+    return board.isFull();
+}
+
+bool Game::checkjs(int x,int y,int type){
+    return board.checkjs(x,y,type);
 }

@@ -22,11 +22,10 @@ public:
 
 class AIPlayer : public Player {
 public:
-    double score[25][25]={};
+    double score[25][25]={},cal[15]={1,5,100,5000,999999,319093202,319093202,319093202,319093202,319093202,319093202,319093202,319093202,319093202,319093202};
     AIPlayer(Board* board, char piece);
     void iniscore();
     void makeMove() override;  // 计算机玩家的落子方法
-    int minimax(int depth, bool isMaximizing);  // Min-Max 算法
 };
 
 #endif // PLAYER_H
