@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build gomoku",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-g",
+                "main.cpp",
+                "game.cpp",
+                "board.cpp",
+                "player.cpp",
+                "ui.cpp",
+                "-o",
+                "gomoku.exe",
+                "-std=c++23",
+                "-DUNICODE",  // 启用 Unicode 编译选项
+                "-D_UNICODE", // 启用 Unicode 编译选项
+                "-lgdi32",
+                "-luser32",
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
