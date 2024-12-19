@@ -10,14 +10,14 @@ Game::Game(int boardSize) : board(boardSize), gameOver(false) {
 
 void Game::switchPlayer() {
     currentPlayer = (currentPlayer == player1) ? player2 : player1;
-    while(!isGameOver()&&!isHuman()){
+    if(!isGameOver()&&!isHuman()){
         currentPlayer->makeMove();
         refresh();
         if(board.checkWin(currentPlayer->getPiece()))over(false);
         else{
             if(board.isFull())over(true);
         }
-        currentPlayer = (currentPlayer == player1) ? player2 : player1;
+        switchPlayer();
     }
 }
 

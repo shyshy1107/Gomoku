@@ -28,7 +28,7 @@ void UI::createWindow() {
     RegisterClassExW(&wc);
 
     HWND hwnd = CreateWindowExW(
-        0, CLASS_NAME, L"Gomoku", WS_OVERLAPPEDWINDOW,
+        0, CLASS_NAME, L"五子棋", WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, CELL_SIZE * BOARD_SIZE+50, CELL_SIZE * BOARD_SIZE+80,
         NULL, NULL, hInstance, this);
 
@@ -65,7 +65,7 @@ void UI::save1(HWND hwnd){
                 outFile << "\n\n";
             }
             outFile.close();
-            MessageBoxW(hwnd, L"Game saved!", L"Save", MB_OK);
+            MessageBoxW(hwnd, L"存档成功", L"存档", MB_OK);
 }
 
 // 窗口过程回调函数
@@ -80,11 +80,10 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             ui = reinterpret_cast<UI*>(pCreate->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ui));
             HMENU hMenu = CreateMenu();
-            AppendMenuW(hMenu, MF_STRING, 1, L"Save Game");
-            AppendMenuW(hMenu, MF_STRING, 2, L"Load Game");
-            AppendMenuW(hMenu, MF_STRING, 3, L"Restart Game");
-            AppendMenuW(hMenu, MF_STRING, 4, L"Exit");
-            AppendMenuW(hMenu, MF_STRING, 5, L"悔棋");
+            AppendMenuW(hMenu, MF_STRING, 1, L"存档");
+            AppendMenuW(hMenu, MF_STRING, 2, L"读档");
+            AppendMenuW(hMenu, MF_STRING, 3, L"重新开始");
+            AppendMenuW(hMenu, MF_STRING, 4, L"悔棋");
             SetMenu(hwnd, hMenu);
         }
         return 0;
@@ -100,7 +99,7 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 {
                     std::ifstream inFile("board.txt");
                     if (!inFile) {
-                        MessageBoxW(hwnd, L"Failed to load the game!", L"Load", MB_OK);
+                        MessageBoxW(hwnd, L"读档失败!", L"Load", MB_OK);
                     }
                     for (int i = 0; i < BOARD_SIZE; ++i) {
                         for (int j = 0; j < BOARD_SIZE; ++j) {
@@ -118,10 +117,7 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 ui->game.initial();
                 InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
                 break;
-            case 4: // 退出
-                PostMessage(hwnd, WM_CLOSE, 0, 0);
-                break;
-            case 5: // 悔棋
+            case 4: // 悔棋
                 {
                     if (!ui->game.hq()) {
                         MessageBoxW(hwnd, L"还没有下棋", L"悔棋", MB_OK);

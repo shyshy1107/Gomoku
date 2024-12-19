@@ -102,7 +102,8 @@ bool Board::checkjs(int x,int y,int type)const{
                 else pos=false;
                 if(neg&&getPiece(xx2,yy2)=='X')cnt++;
                 else neg=false;
-                xx1+=dir[i][0],yy1+=dir[i][1],xx2-=dir[i][0],yy2-=dir[i][1];
+                if(pos)xx1+=dir[i][0],yy1+=dir[i][1];
+                if(neg)xx2-=dir[i][0],yy2-=dir[i][1];
                 pos=pos&&isInBoard(xx1,yy1),neg=neg&&isInBoard(xx2,yy2);
             }
             if(cnt>=5)return true;
