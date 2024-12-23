@@ -11,6 +11,10 @@
 // 构造函数：初始化实例句柄
 UI::UI(HINSTANCE hInstance,Game& game) : hInstance(hInstance), game(game), hwnd(nullptr) {}
 
+BOARD::BOARD(const int arr[2][2]){
+    for(int i=0;i<2;i++)for(int j=0;j<2;j++)pos[i][j]=arr[i][j];
+}
+
 // 析构函数：清理资源
 UI::~UI() {
     // 可以在此处清理资源（如果有的话）
@@ -35,7 +39,8 @@ void UI::createWindow() {
     if (hwnd == NULL) {
         return;
     }
-
+    int arr[2][2]={{30,30},{600,600}};
+    tools.push_back(new BOARD(arr));
     ShowWindow(hwnd, SW_SHOWNORMAL);
     UpdateWindow(hwnd);
 }
@@ -128,7 +133,7 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         }
         return 0;
 
-    case WM_RBUTTONDOWN:{
+    /*case WM_RBUTTONDOWN:{
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
         y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
 
@@ -136,10 +141,17 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             MessageBoxW(hwnd, std::to_wstring(dynamic_cast<AIPlayer*>(ui->game.player2)->score[x][y]).c_str(), L"查分", MB_OK);
         }
         return 0;
-    }
+    }*/
 
     case WM_LBUTTONDOWN: {
         // 处理鼠标点击
+        for(int i=0;i<ui->tools.size();i++){
+            Tool* temp=ui->tools[i];
+            if(temp->onTool(LOWORD(lParam),HIWORD(lParam))){
+                temp->onClick(LOWORD(lParam),HIWORD(lParam),ui->game,hwnd);
+                return 0;
+            }
+        }/*
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
         y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
 
@@ -157,7 +169,7 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 else if(ui->game.checkjs(x,y,1))MessageBoxW(hwnd, L"这步棋是三三/四四禁手!", L"禁手", MB_OK);
             }
         }
-        return 0;
+        return 0;*/
     }
 
     case WM_PAINT: {
@@ -165,20 +177,7 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
         // 绘制棋盘网格
-        for (int i = 0; i < BOARD_SIZE; ++i) {
-            for (int j = 0; j < BOARD_SIZE; ++j) {
-                // 绘制格子
-                Rectangle(hdc, i * CELL_SIZE, j * CELL_SIZE, (i + 1) * CELL_SIZE, (j + 1) * CELL_SIZE);
-                if (ui->game.getPiece(i, j) == 'X') {
-                    MoveToEx(hdc, i * CELL_SIZE + 5, j * CELL_SIZE + 5, NULL);
-                    LineTo(hdc, (i + 1) * CELL_SIZE - 5, (j + 1) * CELL_SIZE - 5);
-                    MoveToEx(hdc, (i + 1) * CELL_SIZE - 5, j * CELL_SIZE + 5, NULL);
-                    LineTo(hdc, i * CELL_SIZE + 5, (j + 1) * CELL_SIZE - 5);
-                } else if (ui->game.getPiece(i, j) == 'O') {
-                    Ellipse(hdc, i * CELL_SIZE + 5, j * CELL_SIZE + 5, (i + 1) * CELL_SIZE - 5, (j + 1) * CELL_SIZE - 5);
-                }
-            }
-        }
+        ui->DrawBoard(hdc,ui->tools[0]->pos[0][0],ui->tools[0]->pos[0][1],ui->tools[0]->pos[1][0],ui->tools[0]->pos[1][1]);
         EndPaint(hwnd, &ps);
         return 0;
     }
@@ -193,20 +192,100 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     }
 }
 
-void UI::DrawBoard(HDC hdc) {
+void UI::DrawBoard(HDC hdc, int startX, int startY, int endX, int endY) {
+    int gridSize = 14;  // 五子棋的棋盘大小是 15x15
+    int cellWidth = (endX - startX) / gridSize;  // 计算每个格子的宽度
+    int cellHeight = (endY - startY) / gridSize; // 计算每个格子的高度
+
     // 绘制棋盘网格
-    for (int i = 0; i < BOARD_SIZE; ++i) {
-        for (int j = 0; j < BOARD_SIZE; ++j) {
-            // 绘制格子
-            Rectangle(hdc, i * CELL_SIZE, j * CELL_SIZE, (i + 1) * CELL_SIZE, (j + 1) * CELL_SIZE);
-            if (game.getPiece(i, j) == 'X') {
-                MoveToEx(hdc, i * CELL_SIZE + 5, j * CELL_SIZE + 5, NULL);
-                LineTo(hdc, (i + 1) * CELL_SIZE - 5, (j + 1) * CELL_SIZE - 5);
-                MoveToEx(hdc, (i + 1) * CELL_SIZE - 5, j * CELL_SIZE + 5, NULL);
-                LineTo(hdc, i * CELL_SIZE + 5, (j + 1) * CELL_SIZE - 5);
-            } else if (game.getPiece(i, j) == 'O') {
-                Ellipse(hdc, i * CELL_SIZE + 5, j * CELL_SIZE + 5, (i + 1) * CELL_SIZE - 5, (j + 1) * CELL_SIZE - 5);
+    for (int i = 0; i <=gridSize; ++i) {
+        for (int j = 0; j <=gridSize; ++j) {
+            // 计算当前格子的左上角和右下角坐标
+            int x1 = startX + i * cellWidth;
+            int y1 = startY + j * cellHeight;
+            int x2 = x1 + cellWidth;
+            int y2 = y1 + cellHeight;
+
+            // 绘制格子（用黑色绘制格线）
+            if(i<gridSize&&j<gridSize){
+                HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));  // 黑色
+                HGDIOBJ oldPen = SelectObject(hdc, hPen);
+                MoveToEx(hdc, x1, y1, NULL);  // 起始点
+                LineTo(hdc, x1, y2);  // 竖线
+                LineTo(hdc, x2, y2);  // 横线
+                LineTo(hdc, x2, y1);  // 竖线
+                LineTo(hdc, x1, y1);  // 关闭矩形
+                SelectObject(hdc, oldPen);
+                DeleteObject(hPen);
+            }
+            
+            // 获取当前格子的棋子（假设 game.getPiece(i, j) 返回 'X', 'O' 或 '.'）
+            char piece = game.getPiece(i, j);
+            if (piece == 'X') {
+                // 绘制黑色棋子（实心圆）
+                HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 0));  // 黑色
+                SelectObject(hdc, hBrush);
+
+                // 确保棋子绘制在格点交点上
+                int centerX = x1;
+                int centerY = y1;
+                int radius = std::min(cellWidth, cellHeight) / 3;  // 半径为格子宽度或高度的三分之一
+
+                // 绘制实心圆（黑棋）
+                Ellipse(hdc, centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+                DeleteObject(hBrush);  // 释放画刷资源
+            } else if (piece == 'O') {
+                // 绘制白色棋子（实心圆）
+                HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 255));  // 白色
+                SelectObject(hdc, hBrush);
+
+                // 确保棋子绘制在格点交点上
+                int centerX = x1;
+                int centerY = y1;
+                int radius = std::min(cellWidth, cellHeight) / 3;  // 半径为格子宽度或高度的三分之一
+
+                // 绘制实心圆（白棋）
+                Ellipse(hdc, centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+                DeleteObject(hBrush);  // 释放画刷资源
             }
         }
     }
+}
+
+void BOARD::onClick(int x,int y,Game& game,HWND hwnd){
+    
+    int startX=pos[0][0],startY=pos[0][1],endX=pos[1][0],endY=pos[1][1];
+    int gridSize = 14;  // 五子棋的棋盘大小是 15x15
+    int cellWidth = (endX - startX) / gridSize;  // 计算每个格子的宽度
+    int cellHeight = (endY - startY) / gridSize; // 计算每个格子的高度
+    for (int i = 0; i <=gridSize; ++i) {
+        for (int j = 0; j <=gridSize; ++j) {
+            // 计算当前格子的左上角和右下角坐标
+            int x1 = startX + i * cellWidth;
+            int y1 = startY + j * cellHeight;
+            if(abs(x-x1)<=(cellWidth/2)&&abs(y-y1)<=(cellHeight/2)&&!game.isGameOver() &&game.isHuman()){
+                if(game.placePiece(i,j)){// 请求重绘窗口
+                    InvalidateRect(hwnd, NULL, TRUE); 
+                    if(game.checkWin(game.getCurrentPiece()))game.over(false);
+                    else{
+                        if(game.isFull())game.over(true);
+                    }
+                    game.switchPlayer();
+                }
+                else{
+                    if(game.checkjs(i,j,2))MessageBoxW(hwnd, L"这步棋是长连禁手!", L"禁手", MB_OK);
+                    else if(game.checkjs(i,j,1))MessageBoxW(hwnd, L"这步棋是三三/四四禁手!", L"禁手", MB_OK);
+            }
+            }
+        }
+    }
+}
+
+void Button::onClick(int x,int y,Game& game,HWND hwnd){
+
+}
+
+bool Tool::onTool(int x,int y)const{
+    if(x<=pos[1][0]&&x>=pos[0][0]&&y<=pos[1][1]&&y>=pos[0][1])return true;
+    return false;
 }
