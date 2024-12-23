@@ -19,6 +19,7 @@
                 "-D_UNICODE", // 启用 Unicode 编译选项
                 "-lgdi32",
                 "-luser32",
+                "-lgdiplus",
             ],
             "group": {
                 "kind": "build",

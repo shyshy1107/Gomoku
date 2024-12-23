@@ -2,12 +2,18 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <gdiplus.h>
 #include <iomanip>
 #include "board.h"
 #include "game.h"
 #include "player.h"
 #include "ui.h"
 
+#pragma comment(lib, "gdiplus.lib")
+
+using namespace Gdiplus;
+
+ULONG_PTR gdiplusToken;
 // 构造函数：初始化实例句柄
 UI::UI(HINSTANCE hInstance,Game& game) : hInstance(hInstance), game(game), hwnd(nullptr) {}
 
@@ -33,13 +39,13 @@ void UI::createWindow() {
 
     HWND hwnd = CreateWindowExW(
         0, CLASS_NAME, L"五子棋", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, CELL_SIZE * BOARD_SIZE+50, CELL_SIZE * BOARD_SIZE+80,
+        CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800,
         NULL, NULL, hInstance, this);
 
     if (hwnd == NULL) {
         return;
     }
-    int arr[2][2]={{30,30},{600,600}};
+    int arr[2][2]={{50,50},{700,700}};
     tools.push_back(new BOARD(arr));
     ShowWindow(hwnd, SW_SHOWNORMAL);
     UpdateWindow(hwnd);
@@ -81,6 +87,9 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_CREATE:
         // 创建菜单
         {
+            // 绘制棋盘网格// 初始化 GDI+
+            GdiplusStartupInput gdiPlusStartupInput;
+            GdiplusStartup(&gdiplusToken, &gdiPlusStartupInput, NULL);
             CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
             ui = reinterpret_cast<UI*>(pCreate->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ui));
@@ -176,14 +185,29 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         // 绘制棋盘
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        // 绘制棋盘网格
+        // 清空背景，避免图像叠加
+        RECT rect;
+        GetClientRect(hwnd, &rect);
+        HBRUSH hBrush = CreateSolidBrush(RGB(220, 220, 220)); // 重绘背景
+        FillRect(hdc, &rect, hBrush);
+        DeleteObject(hBrush); // 释放资源
+
+        // 载入 PNG 背景图像
+        std::wstring filePath = L"G:\\github\\Gomoku\\ui\\bg1.png";
+        Image* image = new Image(filePath.c_str());
+        Graphics graphics(hdc);
+        graphics.DrawImage(image, 0, 0, 1200, 800);
         ui->DrawBoard(hdc,ui->tools[0]->pos[0][0],ui->tools[0]->pos[0][1],ui->tools[0]->pos[1][0],ui->tools[0]->pos[1][1]);
         EndPaint(hwnd, &ps);
+        delete image;  // 释放 GDI+ 图像对象
+
         return 0;
     }
 
     case WM_DESTROY:
         if(!ui->game.isGameOver())ui->save1(hwnd);
+        // 清理 GDI+
+        GdiplusShutdown(gdiplusToken);
         PostQuitMessage(0);
         return 0;
 

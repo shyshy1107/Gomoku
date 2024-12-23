@@ -5,6 +5,11 @@
 #include <string>
 #include "game.h"
 #include <vector>
+#include <gdiplus.h>
+
+#pragma comment(lib, "gdiplus.lib")
+
+using namespace Gdiplus;
 
 class Tool{
 public:
