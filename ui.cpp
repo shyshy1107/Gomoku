@@ -27,9 +27,7 @@ Button::Button(const int arr[2][2],std::wstring Image,int ID):id(ID){
     image[1]=Image;
 }
 
-// 析构函数：清理资源
 UI::~UI() {
-    // 可以在此处清理资源（如果有的话）
 }
 
 // 创建窗口
@@ -45,21 +43,21 @@ void UI::createWindow() {
 
     HWND hwnd = CreateWindowExW(
         0, CLASS_NAME, L"五子棋", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 1200, 800,
+        CW_USEDEFAULT, CW_USEDEFAULT, 1000, 750,
         NULL, NULL, hInstance, this);
 
     if (hwnd == NULL) {
         return;
     }
-    int arr[2][2]={{50,50},{700,700}};
+    int arr[2][2]={{40,40},{680,680}};
     tools.push_back(new BOARD(arr));
-    arr[0][0]=750,arr[0][1]=650,arr[1][0]=990,arr[1][1]=690;
+    arr[0][0]=720,arr[0][1]=620,arr[1][0]=960,arr[1][1]=660;
     tools.push_back(new Button(arr,L"ui\\save.png",1));
-    arr[0][0]=750,arr[0][1]=605,arr[1][0]=990,arr[1][1]=645;
+    arr[0][0]=720,arr[0][1]=577,arr[1][0]=960,arr[1][1]=617;
     tools.push_back(new Button(arr,L"ui\\load.png",2));
-    arr[0][0]=750,arr[0][1]=560,arr[1][0]=990,arr[1][1]=600;
+    arr[0][0]=720,arr[0][1]=534,arr[1][0]=960,arr[1][1]=574;
     tools.push_back(new Button(arr,L"ui\\newgame.png",3));
-    arr[0][0]=750,arr[0][1]=515,arr[1][0]=990,arr[1][1]=555;
+    arr[0][0]=720,arr[0][1]=491,arr[1][0]=960,arr[1][1]=531;
     tools.push_back(new Button(arr,L"ui\\retract.png",4));
     ShowWindow(hwnd, SW_SHOWNORMAL);
     UpdateWindow(hwnd);
@@ -116,45 +114,6 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         }
         return 0;
 
-    /*case WM_COMMAND:
-        switch (LOWORD(wParam)) {
-            case 1: // 存盘
-                {
-                    ui->save1(hwnd);
-                }
-                break;
-            case 2: // 读盘
-                {
-                    std::ifstream inFile("board.txt");
-                    if (!inFile) {
-                        MessageBoxW(hwnd, L"读档失败!", L"读档", MB_OK);
-                    }
-                    for (int i = 0; i < BOARD_SIZE; ++i) {
-                        for (int j = 0; j < BOARD_SIZE; ++j) {
-                            char piece;
-                            inFile >> piece;
-                            ui->game.xq(j,i,piece);
-                        }
-                    }
-                    inFile.close();
-                    InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
-                }
-                break;
-            case 3: // 重新开始
-                // 清空棋盘，重新开始
-                ui->game.initial();
-                InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
-                break;
-            case 4: // 悔棋
-                {
-                    if (!ui->game.hq()) {
-                        MessageBoxW(hwnd, L"还没有下棋", L"悔棋", MB_OK);
-                    }
-                    InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
-                }
-                break;
-        }
-        return 0;*/
     case WM_MOUSEMOVE: {
         // 获取鼠标的 X 和 Y 坐标
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
@@ -192,44 +151,31 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 temp->onClick(LOWORD(lParam),HIWORD(lParam),ui->game,hwnd);
                 return 0;
             }
-        }/*
-        x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
-        y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
-
-        if (!ui->game.isGameOver()&& x < BOARD_SIZE && y < BOARD_SIZE && ui->game.getPiece(x, y) == '.'&&ui->game.isHuman()) {
-            if(ui->game.placePiece(x,y)){
-                InvalidateRect(hwnd, NULL, TRUE); // 请求重绘窗口
-                if(ui->game.checkWin(ui->game.getCurrentPiece()))ui->game.over(false);
-                else{
-                    if(ui->game.isFull())ui->game.over(true);
-                }
-                ui->game.switchPlayer();
-            }
-            else{
-                if(ui->game.checkjs(x,y,2))MessageBoxW(hwnd, L"这步棋是长连禁手!", L"禁手", MB_OK);
-                else if(ui->game.checkjs(x,y,1))MessageBoxW(hwnd, L"这步棋是三三/四四禁手!", L"禁手", MB_OK);
-            }
         }
-        return 0;*/
     }
 
     case WM_PAINT: {
         // 绘制棋盘
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        // 清空背景，避免图像叠加
+        HDC hMemDC = CreateCompatibleDC(hdc);//创建一个内存DC
+        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, 1000, 750);
+        SelectObject(hMemDC, hBitmap);
+        Gdiplus::Graphics graphics(hMemDC);//在内存DC中绘制
         RECT rect;
         GetClientRect(hwnd, &rect);
         HBRUSH hBrush = CreateSolidBrush(RGB(220, 220, 220)); // 重绘背景
-        FillRect(hdc, &rect, hBrush);
-        DeleteObject(hBrush); // 释放资源
-
-        // 载入 PNG 背景图像
-        std::wstring filePath = L"ui\\bg1.png";
+        FillRect(hMemDC, &rect, hBrush);
+        DeleteObject(hBrush); 
+        std::wstring filePath = L"ui\\bg3.png";
         Gdiplus::Image* image = new Gdiplus::Image(filePath.c_str());
-        Gdiplus::Graphics graphics(hdc);
-        graphics.DrawImage(image, 0, 0, 1200, 800);
-        ui->DrawBoard(hdc,ui->tools[0]->pos[0][0],ui->tools[0]->pos[0][1],ui->tools[0]->pos[1][0],ui->tools[0]->pos[1][1]);
+        graphics.DrawImage(image, 0, 0, 1000, 750);
+        delete image; 
+        filePath = L"ui\\bg2.png";
+        image = new Gdiplus::Image(filePath.c_str());
+        graphics.DrawImage(image, 0, 0, 1000, 750);
+        delete image; 
+        ui->DrawBoard(hMemDC,ui->tools[0]->pos[0][0],ui->tools[0]->pos[0][1],ui->tools[0]->pos[1][0],ui->tools[0]->pos[1][1]);
         for(int i=1;i<ui->tools.size();i++){
             Tool* temp=ui->tools[i];
             Button* button= dynamic_cast<Button*>(temp);
@@ -242,8 +188,12 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             graphics.DrawImage(buttoni,ui->tools[i]->pos[0][0],ui->tools[i]->pos[0][1],ui->tools[i]->pos[1][0]-ui->tools[i]->pos[0][0],ui->tools[i]->pos[1][1]-ui->tools[i]->pos[0][1]);
             delete buttoni;
         }
-        EndPaint(hwnd, &ps);
-        delete image;  // 释放 GDI+ 图像对象
+        BITMAP bm;
+        GetObject(hBitmap, sizeof(bm), &bm);  // 获取位图信息
+
+        // 使用 BitBlt 将内存中的内容复制到窗口
+        BitBlt(hdc, 0, 0, bm.bmWidth, bm.bmHeight, hMemDC, 0, 0, SRCCOPY);
+        EndPaint(hwnd, &ps); 
 
         return 0;
     }
@@ -273,7 +223,6 @@ void UI::DrawBoard(HDC hdc, int startX, int startY, int endX, int endY) {
             int y1 = startY + j * cellHeight;
             int x2 = x1 + cellWidth;
             int y2 = y1 + cellHeight;
-
             // 绘制格子（用黑色绘制格线）
             if(i<gridSize&&j<gridSize){
                 HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));  // 黑色
