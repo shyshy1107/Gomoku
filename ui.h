@@ -16,19 +16,24 @@ public:
     int pos[2][2];
     bool onTool(int x,int y)const;
     virtual void onClick(int x,int y,Game& game,HWND hwnd)=0;
+    virtual void onFocus(int x,int y,Game& game,HWND hwnd)=0;
+    bool isFocused=false;
 };
 
 class Button:public Tool{
 public:
+    Button(const int arr[2][2],std::wstring Image,int ID);
     std::wstring image[2];
-    bool isFocused;
+    int id;
     void onClick(int x,int y,Game& game,HWND hwnd)override;
+    void onFocus(int x,int y,Game& game,HWND hwnd)override;
 };
 
 class BOARD:public Tool{
 public:
     BOARD(const int arr[2][2]);
     void onClick(int x,int y,Game& game,HWND hwnd)override;
+    void onFocus(int x,int y,Game& game,HWND hwnd)override;
 };
 
 class UI {

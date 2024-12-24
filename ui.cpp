@@ -21,6 +21,12 @@ BOARD::BOARD(const int arr[2][2]){
     for(int i=0;i<2;i++)for(int j=0;j<2;j++)pos[i][j]=arr[i][j];
 }
 
+Button::Button(const int arr[2][2],std::wstring Image,int ID):id(ID){
+    for(int i=0;i<2;i++)for(int j=0;j<2;j++)pos[i][j]=arr[i][j];
+    image[0]=L"ui\\onfocus2.png";
+    image[1]=Image;
+}
+
 // 析构函数：清理资源
 UI::~UI() {
     // 可以在此处清理资源（如果有的话）
@@ -47,6 +53,14 @@ void UI::createWindow() {
     }
     int arr[2][2]={{50,50},{700,700}};
     tools.push_back(new BOARD(arr));
+    arr[0][0]=750,arr[0][1]=650,arr[1][0]=990,arr[1][1]=690;
+    tools.push_back(new Button(arr,L"ui\\save.png",1));
+    arr[0][0]=750,arr[0][1]=605,arr[1][0]=990,arr[1][1]=645;
+    tools.push_back(new Button(arr,L"ui\\load.png",2));
+    arr[0][0]=750,arr[0][1]=560,arr[1][0]=990,arr[1][1]=600;
+    tools.push_back(new Button(arr,L"ui\\newgame.png",3));
+    arr[0][0]=750,arr[0][1]=515,arr[1][0]=990,arr[1][1]=555;
+    tools.push_back(new Button(arr,L"ui\\retract.png",4));
     ShowWindow(hwnd, SW_SHOWNORMAL);
     UpdateWindow(hwnd);
 }
@@ -61,22 +75,22 @@ void UI::runMessageLoop() {
 }
 
 void UI::save1(HWND hwnd){
-     std::ofstream outFile("board.txt");
-            for (int i = 0; i < BOARD_SIZE; ++i) {
-                for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile<<std::setw(7) << game.getPiece(j, i) << " ";
-                }
-                outFile << "\n";
-            }
-            outFile << "\n";
-            for (int i = 0; i < BOARD_SIZE; ++i) {
-                for (int j = 0; j < BOARD_SIZE; ++j) {
-                    outFile<<std::setw(12) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
-                }
-                outFile << "\n\n";
-            }
-            outFile.close();
-            MessageBoxW(hwnd, L"存档成功", L"存档", MB_OK);
+    std::ofstream outFile("board.txt");
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            outFile<<std::setw(7) << game.getPiece(j, i) << " ";
+        }
+        outFile << "\n";
+    }
+    outFile << "\n";
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            outFile<<std::setw(12) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
+        }
+        outFile << "\n\n";
+    }
+    outFile.close();
+    MessageBoxW(hwnd, L"存档成功", L"存档", MB_OK);
 }
 
 // 窗口过程回调函数
@@ -93,16 +107,16 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
             ui = reinterpret_cast<UI*>(pCreate->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ui));
-            HMENU hMenu = CreateMenu();
+            /*HMENU hMenu = CreateMenu();
             AppendMenuW(hMenu, MF_STRING, 1, L"存档");
             AppendMenuW(hMenu, MF_STRING, 2, L"读档");
             AppendMenuW(hMenu, MF_STRING, 3, L"重新开始");
             AppendMenuW(hMenu, MF_STRING, 4, L"悔棋");
-            SetMenu(hwnd, hMenu);
+            SetMenu(hwnd, hMenu);*/
         }
         return 0;
 
-    case WM_COMMAND:
+    /*case WM_COMMAND:
         switch (LOWORD(wParam)) {
             case 1: // 存盘
                 {
@@ -113,7 +127,7 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 {
                     std::ifstream inFile("board.txt");
                     if (!inFile) {
-                        MessageBoxW(hwnd, L"读档失败!", L"Load", MB_OK);
+                        MessageBoxW(hwnd, L"读档失败!", L"读档", MB_OK);
                     }
                     for (int i = 0; i < BOARD_SIZE; ++i) {
                         for (int j = 0; j < BOARD_SIZE; ++j) {
@@ -140,8 +154,26 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 }
                 break;
         }
+        return 0;*/
+    case WM_MOUSEMOVE: {
+        // 获取鼠标的 X 和 Y 坐标
+        x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
+        y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
+        for(int i=0;i<ui->tools.size();i++){
+            Tool* temp=ui->tools[i];
+            if(temp->onTool(LOWORD(lParam),HIWORD(lParam))){
+                temp->onFocus(LOWORD(lParam),HIWORD(lParam),ui->game,hwnd);
+                return 0;
+            }
+            else{
+                if(temp->isFocused){
+                    temp->isFocused=false;
+                    InvalidateRect(hwnd,NULL,TRUE);
+                }
+            }
+        }
         return 0;
-
+    }
     /*case WM_RBUTTONDOWN:{
         x = LOWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 x 坐标
         y = HIWORD(lParam) / CELL_SIZE; // 获取鼠标点击的 y 坐标
@@ -193,11 +225,23 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         DeleteObject(hBrush); // 释放资源
 
         // 载入 PNG 背景图像
-        std::wstring filePath = L"G:\\github\\Gomoku\\ui\\bg1.png";
-        Image* image = new Image(filePath.c_str());
-        Graphics graphics(hdc);
+        std::wstring filePath = L"ui\\bg1.png";
+        Gdiplus::Image* image = new Gdiplus::Image(filePath.c_str());
+        Gdiplus::Graphics graphics(hdc);
         graphics.DrawImage(image, 0, 0, 1200, 800);
         ui->DrawBoard(hdc,ui->tools[0]->pos[0][0],ui->tools[0]->pos[0][1],ui->tools[0]->pos[1][0],ui->tools[0]->pos[1][1]);
+        for(int i=1;i<ui->tools.size();i++){
+            Tool* temp=ui->tools[i];
+            Button* button= dynamic_cast<Button*>(temp);
+            Gdiplus::Image* buttoni=new Gdiplus::Image(button->image[1].c_str());
+            if(button->isFocused){
+                Gdiplus::Image* focus=new Gdiplus::Image(button->image[0].c_str());
+                graphics.DrawImage(focus,ui->tools[i]->pos[0][0],ui->tools[i]->pos[0][1],ui->tools[i]->pos[1][0]-ui->tools[i]->pos[0][0],ui->tools[i]->pos[1][1]-ui->tools[i]->pos[0][1]);
+                delete focus;
+            }
+            graphics.DrawImage(buttoni,ui->tools[i]->pos[0][0],ui->tools[i]->pos[0][1],ui->tools[i]->pos[1][0]-ui->tools[i]->pos[0][0],ui->tools[i]->pos[1][1]-ui->tools[i]->pos[0][1]);
+            delete buttoni;
+        }
         EndPaint(hwnd, &ps);
         delete image;  // 释放 GDI+ 图像对象
 
@@ -306,10 +350,74 @@ void BOARD::onClick(int x,int y,Game& game,HWND hwnd){
 }
 
 void Button::onClick(int x,int y,Game& game,HWND hwnd){
-
+    switch (id)
+    {
+        case 1: // 存盘
+            {
+                std::ofstream outFile("board.txt");
+                for (int i = 0; i < 15; ++i) {
+                    for (int j = 0; j < 15; ++j) {
+                        outFile<<std::setw(7) << game.getPiece(j, i) << " ";
+                    }
+                    outFile << "\n";
+                }
+                outFile << "\n";
+                for (int i = 0; i < 15; ++i) {
+                    for (int j = 0; j < 15; ++j) {
+                        outFile<<std::setw(12) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
+                    }
+                    outFile << "\n\n";
+                }
+                outFile.close();
+                MessageBoxW(hwnd, L"存档成功", L"存档", MB_OK);
+            }
+            break;
+        case 2: // 读盘
+            {
+                std::ifstream inFile("board.txt");
+                if (!inFile) {
+                    MessageBoxW(hwnd, L"读档失败!", L"读档", MB_OK);
+                }
+                for (int i = 0; i < 15; ++i) {
+                    for (int j = 0; j < 15; ++j) {
+                        char piece;
+                        inFile >> piece;
+                        game.xq(j,i,piece);
+                    }
+                }
+                inFile.close();
+                InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
+            }
+            break;
+        case 3: // 重新开始
+            // 清空棋盘，重新开始
+            game.initial();
+            InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
+            break;
+        case 4: // 悔棋
+            {
+                if (!game.hq()) {
+                    MessageBoxW(hwnd, L"还没有下棋", L"悔棋", MB_OK);
+                }
+                InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
+            }
+            break;
+    
+        default:
+            break;
+    }
 }
 
 bool Tool::onTool(int x,int y)const{
     if(x<=pos[1][0]&&x>=pos[0][0]&&y<=pos[1][1]&&y>=pos[0][1])return true;
     return false;
+}
+
+void BOARD::onFocus(int x,int y,Game& game,HWND hwnd){}
+
+void Button::onFocus(int x,int y,Game& game,HWND hwnd){
+    if(!isFocused){
+        isFocused=true;
+        InvalidateRect(hwnd,NULL,TRUE);
+    }
 }
