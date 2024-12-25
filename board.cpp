@@ -8,6 +8,7 @@ bool Board::placePiece(int x, int y, char piece) {
         lastX=x;
         lastY=y;
         if(piece!='.')op.push({x,y});
+        else op.pop();
         return true;
     }
     else return false;
@@ -20,13 +21,7 @@ int Board::getSize()const{
 bool Board::hq(){
     if(!op.empty()){
         int x=op.top().first,y=op.top().second;
-        placePiece(x,y,'.');
-        op.pop();
-    }
-    else return false;
-    if(!op.empty()){
-        int x=op.top().first,y=op.top().second;
-        placePiece(x,y,'.');
+        grid[x][y]='.';
         op.pop();
         return true;
     }

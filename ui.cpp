@@ -4,6 +4,7 @@
 #include <iostream>
 #include <gdiplus.h>
 #include <iomanip>
+#include "jsoncpp/json.h"
 #include "board.h"
 #include "game.h"
 #include "player.h"
@@ -99,12 +100,16 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_CREATE:
         // 创建菜单
         {
-            // 绘制棋盘网格// 初始化 GDI+
+            // 初始化 GDI+
             GdiplusStartupInput gdiPlusStartupInput;
             GdiplusStartup(&gdiplusToken, &gdiPlusStartupInput, NULL);
             CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
             ui = reinterpret_cast<UI*>(pCreate->lpCreateParams);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ui));
+            if(!ui->game.isHuman()){
+                ui->game.currentPlayer->makeMove();
+                ui->game.switchPlayer();
+            }
             /*HMENU hMenu = CreateMenu();
             AppendMenuW(hMenu, MF_STRING, 1, L"存档");
             AppendMenuW(hMenu, MF_STRING, 2, L"读档");

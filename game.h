@@ -24,12 +24,12 @@ public:
     bool isFull()const;
     bool checkjs(int x,int y,int type);
     Player* player2;  // 玩家2
+    Player* currentPlayer;  // 当前玩家
+    Player* player1;  // 玩家1
 
 private:
     HWND hwnd;
     Board board;
-    Player* currentPlayer;  // 当前玩家
-    Player* player1;  // 玩家1
     bool gameOver;  // 游戏是否结束
 };
 

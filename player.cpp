@@ -17,7 +17,22 @@ void HumanPlayer::makeMove() {
 
 AIPlayer::AIPlayer(Board* board, char piece) : Player(board, piece) {}
 
-void AIPlayer::makeMove() {
+std::priority_queue<AIPlayer::move> AIPlayer::bestmove(){
+    std::priority_queue<move> q;
+    for(int i=0;i<board->getSize();i++){
+        for(int j=0;j<board->getSize();j++){
+            if(board->getPiece(i,j)!='.')continue;
+            if(board->checkjs(i,j,0)||board->checkjs(i,j,1)||board->checkjs(i,j,2)){
+                score[i][j]=0;
+                continue;
+            }
+            q.push({i,j,score[i][j]});
+        }
+    }
+    return q;
+}
+
+void AIPlayer::calscore(char piece){
     memset(score,0,sizeof(score));
     iniscore();
     char oppo=(piece=='X'?'O':'X');
@@ -137,27 +152,38 @@ void AIPlayer::makeMove() {
                     }
                 }
                 //分情况对分数进行合计
-                if(pd1!=pd2)score[i][j]=std::max(score[i][j],std::max((cal[cnt[0][1]]*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd1==piece?1:(pd1=='.'?0:50))*pow(5,flag1),(cal[cnt[1][1]]*pow(0.2,cnt[1][0]+cnt[0][0]))*(pd2==piece?1:(pd2=='.'?0:50))*pow(5,flag2)));
-                else score[i][j]=std::max(score[i][j],(cal[cnt[0][1]+cnt[1][1]]*pow(0.2,cnt[0][0]+cnt[1][0]>1?1:cnt[0][0]+cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:50))*pow(5,flag1+flag2));
+                if(pd1!=pd2)score[i][j]=std::max(score[i][j],std::max((cal[cnt[0][1]]*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd1==piece?1:(pd1=='.'?0:(piece=='X'?0.02:50)))*pow(5,flag1),(cal[cnt[1][1]]*pow(0.2,cnt[1][0]+cnt[0][0]))*(pd2==piece?1:(pd2=='.'?0:(piece=='X'?0.02:50)))*pow(5,flag2)));
+                else score[i][j]=std::max(score[i][j],(cal[cnt[0][1]+cnt[1][1]]*pow(0.2,cnt[0][0]+cnt[1][0]>1?1:cnt[0][0]+cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:(piece=='X'?0.02:50)))*pow(5,flag1+flag2));
                 if(board->checkWinFrom(i,j,piece))score[i][j]=1e9;
                 if(board->checkWinFrom(i,j,oppo))score[i][j]=1e9-1;
             }
         }
     }
-    int bestx,besty;
-    double bestscore=0;
-    for(int i=0;i<board->getSize();i++){
-        for(int j=0;j<board->getSize();j++){
-            if(board->getPiece(i,j)!='.')continue;
-            if(board->checkjs(i,j,0)||board->checkjs(i,j,1)||board->checkjs(i,j,2))score[i][j]=0;
-            if(score[i][j]>bestscore){
-                bestscore=score[i][j];
-                bestx=i;
-                besty=j;
-            }
+}
+
+void AIPlayer::makeMove() {
+    calscore(piece);
+    std::priority_queue<move> q=bestmove();
+    move best=q.top();
+    double minscore=9999999999;
+    while(!q.empty()){
+        move m=q.top();
+        q.pop();
+        board->placePiece(m.x,m.y,piece);
+        calscore(piece=='X'?'O':'X');
+        std::priority_queue<move> p=bestmove();
+        if(p.top().score<minscore){
+            minscore=p.top().score;
+            best=m;
         }
+        else{
+            board->placePiece(m.x,m.y,'.');
+            break;
+        }
+        board->placePiece(m.x,m.y,'.');
+
     }
-    board->placePiece(bestx,besty,piece);
+    board->placePiece(best.x,best.y,piece);
 }
 
 void AIPlayer::iniscore(){
@@ -176,4 +202,5 @@ void AIPlayer::iniscore(){
             score[i][j]+=10;
         }
     }
+    score[7][7]+=20;
 }

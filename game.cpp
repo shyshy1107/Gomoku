@@ -4,7 +4,7 @@
 
 Game::Game(int boardSize) : board(boardSize), gameOver(false) {
     player1 = new HumanPlayer(&board, 'X');
-    player2 = new AIPlayer(&board, 'O');
+    player2 = new HumanPlayer(&board, 'O');
     currentPlayer = player1;
 }
 
@@ -55,8 +55,8 @@ char Game::getCurrentPiece()const{
 void Game::over(bool isTie){
     gameOver=true;
     if(isTie)MessageBoxW(NULL,L"平局",L"平局",MB_OK | MB_ICONINFORMATION);
-    else if(isHuman())MessageBoxW(NULL,L"人类胜利",L"胜利",MB_OK | MB_ICONINFORMATION);
-    else MessageBoxW(NULL,L"AI胜利",L"失败",MB_OK | MB_ICONINFORMATION);
+    else if(getCurrentPiece()=='X')MessageBoxW(NULL,L"黑棋胜利",L"结束",MB_OK | MB_ICONINFORMATION);
+    else MessageBoxW(NULL,L"白棋胜利",L"结束",MB_OK | MB_ICONINFORMATION);
 }
 
 void Game::refresh(){
@@ -70,6 +70,11 @@ void Game::sethwnd(HWND hwnd){
 bool Game::hq(){
     if(board.hq()){
         gameOver=false;
+        if(dynamic_cast<HumanPlayer*>((currentPlayer == player1) ? player2 : player1))switchPlayer();
+        else{
+            if(board.hq())return true;
+            return false;
+        }
         return true;
     }
     return false;
