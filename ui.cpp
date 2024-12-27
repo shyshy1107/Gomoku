@@ -4,7 +4,6 @@
 #include <iostream>
 #include <gdiplus.h>
 #include <iomanip>
-#include "jsoncpp/json.h"
 #include "board.h"
 #include "game.h"
 #include "player.h"
@@ -240,7 +239,17 @@ void UI::DrawBoard(HDC hdc, int startX, int startY, int endX, int endY) {
                 SelectObject(hdc, oldPen);
                 DeleteObject(hPen);
             }
-            
+            if(i==game.board.lastX&&j==game.board.lastY){
+                HPEN hPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));  // 红色
+                HGDIOBJ oldPen = SelectObject(hdc, hPen);
+                MoveToEx(hdc, x1-cellWidth/3, y1-cellHeight/3, NULL);  // 起始点
+                LineTo(hdc, x1-cellWidth/3, y1+cellHeight/3);  // 竖线
+                LineTo(hdc, x1+cellWidth/3, y1+cellHeight/3);  // 横线
+                LineTo(hdc, x1+cellWidth/3, y1-cellHeight/3);  // 竖线
+                LineTo(hdc, x1-cellWidth/3, y1-cellHeight/3);  // 关闭矩形
+                SelectObject(hdc, oldPen);
+                DeleteObject(hPen);
+            }
             // 获取当前格子的棋子（假设 game.getPiece(i, j) 返回 'X', 'O' 或 '.'）
             char piece = game.getPiece(i, j);
             if (piece == 'X') {
@@ -311,16 +320,9 @@ void Button::onClick(int x,int y,Game& game,HWND hwnd){
                 std::ofstream outFile("board.txt");
                 for (int i = 0; i < 15; ++i) {
                     for (int j = 0; j < 15; ++j) {
-                        outFile<<std::setw(7) << game.getPiece(j, i) << " ";
+                        outFile<<game.getPiece(j, i);
                     }
                     outFile << "\n";
-                }
-                outFile << "\n";
-                for (int i = 0; i < 15; ++i) {
-                    for (int j = 0; j < 15; ++j) {
-                        outFile<<std::setw(12) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
-                    }
-                    outFile << "\n\n";
                 }
                 outFile.close();
                 MessageBoxW(hwnd, L"存档成功", L"存档", MB_OK);
@@ -346,7 +348,11 @@ void Button::onClick(int x,int y,Game& game,HWND hwnd){
         case 3: // 重新开始
             // 清空棋盘，重新开始
             game.initial();
-            InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
+            InvalidateRect(hwnd, NULL, TRUE);
+            if(!game.isHuman()){
+                game.currentPlayer->makeMove();
+                game.switchPlayer();
+            } // 重新绘制
             break;
         case 4: // 悔棋
             {

@@ -26,10 +26,10 @@ public:
     Player* player2;  // 玩家2
     Player* currentPlayer;  // 当前玩家
     Player* player1;  // 玩家1
+    Board board;
 
 private:
     HWND hwnd;
-    Board board;
     bool gameOver;  // 游戏是否结束
 };
 

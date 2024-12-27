@@ -55,6 +55,17 @@ bool Board::checkWin(char piece) {
     return checkWinFrom(lastX, lastY, piece);
 }
 
+bool Board::hasneighbor(int x,int y,int dis){
+    for(int i=dis*-1;i<=dis;i++){
+        for(int j=dis*-1;j<=dis;j++){
+            if(!(i||j))continue;
+            if(!isInBoard(x+i,y+j))continue;
+            if(grid[i+x][j+y]!='.')return true;
+        }
+    }
+    return false;
+}
+
 bool Board::isValidMove(int x, int y,char piece) const {
     if(!isInBoard(x,y))return false;
     if(piece!='.'&&grid[x][y]!='.')return false;
@@ -114,20 +125,20 @@ bool Board::checkjs(int x,int y,int type)const{
             int cnt01=0,cnt02=0,cnt1=1;
             int xx1=x+dir[i][0],yy1=y+dir[i][1],xx2=x-dir[i][0],yy2=y-dir[i][1];
             bool pos=isInBoard(xx1,yy1),neg=isInBoard(xx2,yy2);
-            while(cnt01<2||cnt02<2){
+            while(cnt01<=2||cnt02<=2){
                 if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='.')cnt01++;
                 else if(isInBoard(xx1,yy1)&&pos&&getPiece(xx1,yy1)=='X')cnt1++;
                 else pos=false;
                 pos=pos&&isInBoard(xx1,yy1)&&cnt01<2;
                 if(pos)xx1+=dir[i][0],yy1+=dir[i][1];
-                if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
+                if(cnt1==3&&cnt01+cnt02<=3&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)=='.'&&getPiece(xx2,yy2)=='.'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(isInBoard(xx1,yy1)&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
                 if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='.')cnt02++;
                 else if(isInBoard(xx2,yy2)&&neg&&getPiece(xx2,yy2)=='X')cnt1++;
                 else neg=false;
                 neg=neg&&isInBoard(xx2,yy2)&&cnt02<2;
                 if(neg)xx2-=dir[i][0],yy2-=dir[i][1];
-                if(cnt1==3&&cnt01+cnt02<2&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)!='O'&&getPiece(xx2,yy2)!='O'))flag33=1;
+                if(cnt1==3&&cnt01+cnt02<=3&&(isInBoard(xx1,yy1)&&isInBoard(xx2,yy2)&&getPiece(xx1,yy1)=='.'&&getPiece(xx2,yy2)=='.'))flag33=1;
                 if(cnt1==4&&(cnt01==1||cnt02==1||(pos&&getPiece(xx1,yy1)=='.')||(neg&&getPiece(xx2,yy2)=='.')))flag44=1;
                 if(!(pos||neg))break;
             }

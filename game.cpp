@@ -1,11 +1,11 @@
 #include "game.h"
 #include <iostream>
 #include <windows.h>
+#include <fstream>
+#include "jsoncpp/json.h"
 
 Game::Game(int boardSize) : board(boardSize), gameOver(false) {
-    player1 = new HumanPlayer(&board, 'X');
-    player2 = new HumanPlayer(&board, 'O');
-    currentPlayer = player1;
+    initial();
 }
 
 void Game::switchPlayer() {
@@ -35,11 +35,22 @@ bool Game::placePiece(int x,int y){
 
 void Game::initial(){
     board.clearBoard();
-    delete player1;
-    player1=new HumanPlayer(&board,'X');
-    delete player2;
-    player2=new AIPlayer(&board,'O');
-    dynamic_cast<AIPlayer*>(player2)->iniscore();
+    std::ifstream inFile("config.json");
+    if(!inFile){
+        player1=new HumanPlayer(&board,'X');
+        player2=new AIPlayer(&board,'O');
+        dynamic_cast<AIPlayer*>(player2)->iniscore();
+    }
+    else{
+        Json::Value settings;
+        Json::Reader reader;
+        reader.parse(inFile, settings);
+        if(settings.get("Player1",1).asBool())player1=new HumanPlayer(&board,'X');
+        else player1=new AIPlayer(&board,'X');
+        if(!settings.get("Player2",0).asBool())player2=new AIPlayer(&board,'O');
+        else player2=new HumanPlayer(&board,'O');
+    }
+    inFile.close();
     currentPlayer=player1;
     gameOver=false;
 }
@@ -81,7 +92,8 @@ bool Game::hq(){
 }
 
 void Game::xq(int x,int y,char piece){
-    board.placePiece(x,y,piece);
+    if(piece!='.')board.placePiece(x,y,piece);
+    else board.grid[x][y]='.';
 }
 
 bool Game::checkWin(char piece){
