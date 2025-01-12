@@ -4,6 +4,8 @@
 #include <iostream>
 #include <gdiplus.h>
 #include <iomanip>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 #include "board.h"
 #include "game.h"
 #include "player.h"
@@ -61,6 +63,11 @@ void UI::createWindow() {
     tools.push_back(new Button(arr,L"ui\\retract.png",4));
     ShowWindow(hwnd, SW_SHOWNORMAL);
     UpdateWindow(hwnd);
+
+    SDL_Init(SDL_INIT_AUDIO);
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
+    Mix_Music *music = Mix_LoadMUS("music\\bgm.mp3");
+    Mix_PlayMusic(music, -1);
 }
 
 // 运行消息循环
@@ -207,6 +214,9 @@ LRESULT CALLBACK UI::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         // 清理 GDI+
         GdiplusShutdown(gdiplusToken);
         PostQuitMessage(0);
+        Mix_HaltMusic();
+        Mix_CloseAudio();
+        SDL_Quit();
         return 0;
 
     default:
@@ -296,7 +306,11 @@ void BOARD::onClick(int x,int y,Game& game,HWND hwnd){
             int y1 = startY + j * cellHeight;
             if(abs(x-x1)<=(cellWidth/2)&&abs(y-y1)<=(cellHeight/2)&&!game.isGameOver() &&game.isHuman()){
                 if(game.placePiece(i,j)){// 请求重绘窗口
-                    InvalidateRect(hwnd, NULL, TRUE); 
+                    Mix_Chunk *music = Mix_LoadWAV("music\\xq.mp3");
+                    Mix_Volume(Mix_PlayChannel(2, music, 0),100);
+                    SDL_Delay(500);
+                    Mix_FreeChunk(music);
+                    InvalidateRect(hwnd, NULL, TRUE); // 重新绘制
                     if(game.checkWin(game.getCurrentPiece()))game.over(false);
                     else{
                         if(game.isFull())game.over(true);

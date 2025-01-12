@@ -23,6 +23,8 @@ bool Board::hq(){
         int x=op.top().first,y=op.top().second;
         grid[x][y]='.';
         op.pop();
+        if(!op.empty()){lastX=op.top().first;lastY=op.top().second;}
+        else lastX=lastY=-1;
         return true;
     }
     else return false;
@@ -34,6 +36,7 @@ void Board::clearBoard(){
             grid[i][j] = '.';
         }
     }
+    lastX=lastY=-1;
     while(!op.empty())op.pop();
 }
 

@@ -20,10 +20,7 @@ public:
     std::vector<std::vector<char>> grid;  // 棋盘存储
     bool hasneighbor(int x,int y,int dis);
     Board(Board& other):grid(other.grid),size(other.size){};
-<<<<<<< HEAD
     int lastX,lastY;
-=======
->>>>>>> f341381519bedca16050500a5c59e05b6ed9b248
     
 private:
     int size;  // 棋盘大小

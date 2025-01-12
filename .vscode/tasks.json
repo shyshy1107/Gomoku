@@ -20,7 +20,10 @@
                 "-lgdi32",
                 "-luser32",
                 "-lgdiplus",
-                "-static",
+                "-lSDL2_mixer",
+                "-lSDL2",
+                "-lmingw32",
+                "-static-libgcc",
             ],
             "group": {
                 "kind": "build",
