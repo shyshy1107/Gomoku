@@ -19,7 +19,7 @@ public:
     bool hq();
     std::vector<std::vector<char>> grid;  // 棋盘存储
     bool hasneighbor(int x,int y);
-    Board(Board& other):grid(other.grid),size(other.size){};
+    Board(Board& other):size(other.size),grid(other.grid){};
     int lastX,lastY;
     
 private:

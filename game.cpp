@@ -39,7 +39,6 @@ void Game::initial(){
     if(!inFile){
         player1=new HumanPlayer(&board,'X');
         player2=new AIPlayer(&board,'O');
-        dynamic_cast<AIPlayer*>(player2)->iniscore();
     }
     else{
         Json::Value settings;
