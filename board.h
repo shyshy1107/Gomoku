@@ -18,7 +18,7 @@ public:
     bool checkjs(int x,int y,int type)const;
     bool hq();
     std::vector<std::vector<char>> grid;  // 棋盘存储
-    bool hasneighbor(int x,int y,int dis);
+    bool hasneighbor(int x,int y);
     Board(Board& other):grid(other.grid),size(other.size){};
     int lastX,lastY;
     

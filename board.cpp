@@ -58,12 +58,12 @@ bool Board::checkWin(char piece) {
     return checkWinFrom(lastX, lastY, piece);
 }
 
-bool Board::hasneighbor(int x,int y,int dis){
-    for(int i=dis*-1;i<=dis;i++){
-        for(int j=dis*-1;j<=dis;j++){
+bool Board::hasneighbor(int x,int y){
+    for(int i=-1;i<=1;i++){
+        for(int j=-1;j<=1;j++){
             if(!(i||j))continue;
             if(!isInBoard(x+i,y+j))continue;
-            if(grid[i+x][j+y]!='.')return true;
+            if(getPiece(x+i,y+j)!='.')return true;
         }
     }
     return false;
