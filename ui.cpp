@@ -87,13 +87,6 @@ void UI::save1(HWND hwnd){
         }
         outFile << "\n";
     }
-    outFile << "\n";
-    for (int i = 0; i < BOARD_SIZE; ++i) {
-        for (int j = 0; j < BOARD_SIZE; ++j) {
-            outFile<<std::setw(12) << int(dynamic_cast<AIPlayer*>(game.player2)->score[j][i]) << " ";
-        }
-        outFile << "\n\n";
-    }
     outFile.close();
     MessageBoxW(hwnd, L"存档成功", L"存档", MB_OK);
 }
