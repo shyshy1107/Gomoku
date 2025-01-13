@@ -8,8 +8,77 @@
 #include <random>
 #include <limits>
 #include <cmath>
+#include <thread>
+#include <limits>
+#include <memory>
+#include <functional>
+#include <future>
+#include <condition_variable>
+#include <string.h>
 #include <cstring>
 using namespace std;
+class ThreadPool {
+public:
+    ThreadPool(size_t numThreads) : stop(false) {
+        for (size_t i = 0; i < numThreads; ++i) {
+            threads.emplace_back([this] {
+                while (true) {
+                    std::function<void()> task;
+                    {
+                        std::unique_lock<std::mutex> lock(queueMutex);
+                        condition.wait(lock, [this] { return stop ||!tasks.empty(); });
+                        if (stop && tasks.empty()) {
+                            return;
+                        }
+                        task = std::move(tasks.front());
+                        tasks.pop();
+                    }
+                    task();
+                }
+            });
+        }
+    }
+
+
+    template <typename F, typename... Args>
+    auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+        using return_type = typename std::result_of<F(Args...)>::type;
+        auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+        std::future<return_type> res = task->get_future();
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            if (stop) {
+                throw std::runtime_error("enqueue on stopped ThreadPool");
+            }
+            tasks.emplace([task]() { (*task)(); });
+        }
+        condition.notify_one();
+        return res;
+    }
+
+
+    ~ThreadPool() {
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            stop = true;
+        }
+        condition.notify_all();
+        for (std::thread& thread : threads) {
+            if (thread.joinable()) {
+                thread.join();
+            }
+        }
+    }
+
+
+private:
+    std::vector<std::thread> threads;
+    std::queue<std::function<void()>> tasks;
+    std::mutex queueMutex;
+    std::condition_variable condition;
+    bool stop;
+};
+
 class Board {
 public:
     Board(int size = 15);  // 构造函数，初始化棋盘
@@ -189,6 +258,14 @@ public:
             return score < other.score;  // 小于号的逻辑反转
         }   
     };
+    struct Node{
+        Node* parent=nullptr;
+        std::vector<Node*> children;
+        int x,y,wins=0,visits=0;
+        Node(int x,int y, Node* p = nullptr) : x(x),y(y),parent(p) {}
+    };
+    void simulate(Node* node,std::shared_ptr<Board> simboard,char currentPlayer);
+    move mtcl(int cnt);
     std::priority_queue<move> bestmove(Board* board);
 };
 
@@ -196,179 +273,238 @@ Player::Player(Board* board, char piece) : board(board), piece(piece) {}
 
 AIPlayer::AIPlayer(Board* board, char piece) : Player(board, piece) {}
 
-std::priority_queue<AIPlayer::move> AIPlayer::bestmove(Board* board){
-    std::priority_queue<move> q;
-    for(int i=0;i<board->getSize();i++){
-        for(int j=0;j<board->getSize();j++){
-            if(board->getPiece(i,j)!='.')continue;
-            if(board->checkjs(i,j,0)||board->checkjs(i,j,1)||board->checkjs(i,j,2)){
-                score[i][j]=0;
-                continue;
+void deleteNode(AIPlayer::Node* node) {
+    for (auto child : node->children) {
+        deleteNode(child);
+    }
+    delete node;
+}
+
+void AIPlayer::simulate(Node* node,std::shared_ptr<Board> simboard,char currentPlayer){
+    char winner='A';
+    int steps=0;
+    while(winner=='A'){
+        if(simboard->isFull()){
+            winner='.';
+            break;
+        }
+        int vis[15][15]={0};
+        std::vector<std::pair<int,int>> moves;
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                if(simboard->getPiece(i,j)=='.'&&simboard->hasneighbor(i,j,1)){
+                    if(currentPlayer=='X'&&(simboard->checkjs(i,j,1)||simboard->checkjs(i,j,2)))continue;
+                    if(simboard->checkWinFrom(i,j,currentPlayer)){
+                        winner=currentPlayer;
+                        goto win;
+                    }
+                    if(simboard->checkWinFrom(i,j,(currentPlayer=='X'?'O':'X'))){
+                        if(!vis[i][j]){moves.emplace_back(i,j);vis[i][j]=1;}
+                        goto xq;
+                    }
+                }
             }
-            if(board->hasneighbor(i,j,1))q.push({i,j,score[i][j]});
+        }
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                if(simboard->getPiece(i,j)=='.'&&simboard->hasneighbor(i,j,1)){
+                    if(currentPlayer=='X'&&(simboard->checkjs(i,j,1)||simboard->checkjs(i,j,2)))continue;
+                    int dir[8][2]={{0,1},{1,0},{1,-1},{1,1},{0,-1},{-1,0},{-1,1},{-1,-1}};
+                    for(int k=0;k<8;k++){
+                        if(simboard->isInBoard(i+4*dir[k][0],j+4*dir[k][1])&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])==currentPlayer&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==currentPlayer&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==currentPlayer&&simboard->getPiece(i+4*dir[k][0],j+4*dir[k][1])=='.'){
+                            winner=currentPlayer;
+                            goto win;
+                        }
+                        if(simboard->isInBoard(i+3*dir[k][0],j+3*dir[k][1])&&simboard->isInBoard(i-2*dir[k][0],j-2*dir[k][1])&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==currentPlayer&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==currentPlayer&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==currentPlayer&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])=='.'&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])=='.'){
+                            winner=currentPlayer;
+                            goto win;
+                        }
+                        if(simboard->isInBoard(i+2*dir[k][0],j+2*dir[k][1])&&simboard->isInBoard(i-3*dir[k][0],j-3*dir[k][1])&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])==currentPlayer&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==currentPlayer&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==currentPlayer&&simboard->getPiece(i-3*dir[k][0],j-3*dir[k][1])=='.'&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])=='.'){
+                            winner=currentPlayer;
+                            goto win;
+                        }
+                        if(simboard->isInBoard(i+4*dir[k][0],j+4*dir[k][1])&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+4*dir[k][0],j+4*dir[k][1])=='.'){
+                            if(!vis[i][j]){moves.emplace_back(i,j);vis[i][j]=1;}
+                        }
+                        if(simboard->isInBoard(i+3*dir[k][0],j+3*dir[k][1])&&simboard->isInBoard(i-2*dir[k][0],j-2*dir[k][1])&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])=='.'&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])=='.'){
+                            if(!vis[i][j]){moves.emplace_back(i,j);vis[i][j]=1;}
+                        }
+                        if(simboard->isInBoard(i+2*dir[k][0],j+2*dir[k][1])&&simboard->isInBoard(i-3*dir[k][0],j-3*dir[k][1])&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i-3*dir[k][0],j-3*dir[k][1])=='.'&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])=='.'){
+                            if(!vis[i][j]){moves.emplace_back(i,j);vis[i][j]=1;}
+                        }
+                    }
+                }
+            }
+        }
+        if(!moves.empty())goto xq;
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                if(simboard->getPiece(i,j)=='.'&&simboard->hasneighbor(i,j,1)){
+                    if(currentPlayer=='X'&&(simboard->checkjs(i,j,1)||simboard->checkjs(i,j,2)))continue;
+                    if(!vis[i][j]){moves.emplace_back(i,j);vis[i][j]=1;}
+                }
+            }
+        }
+        if(moves.empty()){
+            winner=(currentPlayer=='X'?'O':'X');
+            break;
+        }
+        xq:;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<int> dis(0, moves.size()-1);
+        std::pair<int,int> best=moves[dis(gen)];
+        simboard->placePiece(best.first,best.second, currentPlayer);
+        steps++;
+        if(steps>8){
+            winner='.';
+            break;
+        }
+        currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+    }
+    win:;
+    while (node != nullptr) {
+        node->visits++;
+        if (winner == piece) {
+            node->wins++;
+        }
+        if(winner==(piece=='X'?'O':'X'))node->wins--;
+        node = node->parent;
+    }
+}
+
+AIPlayer::move AIPlayer::mtcl(int cnt){
+    for(int i=0;i<15;i++){
+        for(int j=0;j<15;j++){
+            if(board->getPiece(i,j)=='.'&&board->hasneighbor(i,j,1)){
+                if(piece=='X'&&(board->checkjs(i,j,1)||board->checkjs(i,j,2)))continue;
+                if(board->checkWinFrom(i,j,piece)){
+                    return {i,j,1e9};
+                }
+                if(board->checkWinFrom(i,j,(piece=='X'?'O':'X'))){
+                    return {i,j,1e9};
+                }
+            }
         }
     }
-    return q;
+    ThreadPool pool(std::thread::hardware_concurrency());
+    std::vector<std::future<void>> futures;
+    Node* root=new Node(-1,-1);
+    for(int tttt=0;tttt<cnt;tttt++){
+        Node* node=root;
+        char currentPlayer=piece;
+        std::shared_ptr<Board> simboard=std::make_shared<Board>(*board);
+        while (!node->children.empty()) {
+            Node* bestNode = nullptr;
+            double bestValue = -std::numeric_limits<double>::infinity();
+
+            for (auto child : node->children) {
+                double winRate,uctValue;
+                if (child->visits == 0) {
+                    uctValue = std::numeric_limits<double>::infinity(); // 强制选择未访问节点
+                } else {
+                    double winRate = static_cast<double>(child->wins) / child->visits;
+                    uctValue = winRate + std::sqrt(2 * std::log(node->visits + 1) / child->visits);
+                }
+                uctValue += static_cast<double>(std::rand()) / RAND_MAX * 1e-6; 
+                if (uctValue > bestValue) {
+                    bestValue = uctValue;
+                    bestNode = child;
+                }
+            }
+            node=bestNode;
+            if(!simboard->placePiece(node->x,node->y,currentPlayer)){
+                std::cerr<<"Invalid move!"<<std::endl;
+                exit(1);
+            }
+            currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+        }
+        int visit[15][15]={0};
+        std::vector<std::pair<int,int>> children;
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                if(simboard->getPiece(i,j)=='.'){
+                    if(currentPlayer=='X'&&(simboard->checkjs(i,j,1)||simboard->checkjs(i,j,2)))continue;
+                    if(simboard->checkWinFrom(i,j,currentPlayer)){
+                        if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                        goto child;
+                    }
+                    if(simboard->checkWinFrom(i,j,(currentPlayer=='X'?'O':'X'))){
+                        if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                    }
+                }
+            }
+        }
+        if(!children.empty())goto child;
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                if(simboard->getPiece(i,j)=='.'&&simboard->hasneighbor(i,j,1)){
+                    if(currentPlayer=='X'&&(simboard->checkjs(i,j,1)||simboard->checkjs(i,j,2)))continue;
+                    int dir[8][2]={{0,1},{1,0},{1,-1},{1,1},{0,-1},{-1,0},{-1,1},{-1,-1}};
+                    for(int k=0;k<8;k++){
+                        if(simboard->isInBoard(i+4*dir[k][0],j+4*dir[k][1])&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])==currentPlayer&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==currentPlayer&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==currentPlayer&&simboard->getPiece(i+4*dir[k][0],j+4*dir[k][1])=='.'){
+                            if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                            goto child;
+                        }
+                        if(simboard->isInBoard(i+3*dir[k][0],j+3*dir[k][1])&&simboard->isInBoard(i-2*dir[k][0],j-2*dir[k][1])&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==currentPlayer&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==currentPlayer&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==currentPlayer&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])=='.'&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])=='.'){
+                            if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                            goto child;
+                        }
+                        if(simboard->isInBoard(i+2*dir[k][0],j+2*dir[k][1])&&simboard->isInBoard(i-3*dir[k][0],j-3*dir[k][1])&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])==currentPlayer&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==currentPlayer&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==currentPlayer&&simboard->getPiece(i-3*dir[k][0],j-3*dir[k][1])=='.'&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])=='.'){
+                            if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                            goto child;
+                        }
+                        if(simboard->isInBoard(i+4*dir[k][0],j+4*dir[k][1])&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+4*dir[k][0],j+4*dir[k][1])=='.'){
+                            if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                        }
+                        if(simboard->isInBoard(i+3*dir[k][0],j+3*dir[k][1])&&simboard->isInBoard(i-2*dir[k][0],j-2*dir[k][1])&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+3*dir[k][0],j+3*dir[k][1])=='.'&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])=='.'){
+                            if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                        }
+                        if(simboard->isInBoard(i+2*dir[k][0],j+2*dir[k][1])&&simboard->isInBoard(i-3*dir[k][0],j-3*dir[k][1])&&simboard->getPiece(i-2*dir[k][0],j-2*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i-1*dir[k][0],j-1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i+1*dir[k][0],j+1*dir[k][1])==(currentPlayer=='X'?'O':'X')&&simboard->getPiece(i-3*dir[k][0],j-3*dir[k][1])=='.'&&simboard->getPiece(i+2*dir[k][0],j+2*dir[k][1])=='.'){
+                            if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                        }
+                    }
+                }
+            }
+        }
+        if(!children.empty())goto child;
+        for(int i=0;i<15;i++){
+            for(int j=0;j<15;j++){
+                if(simboard->getPiece(i,j)=='.'&&simboard->hasneighbor(i,j,1)){
+                    if(currentPlayer=='X'&&(simboard->checkjs(i,j,1)||simboard->checkjs(i,j,2)))continue;
+                    if(!visit[i][j]){children.emplace_back(i,j);visit[i][j]=1;}
+                }
+            }
+        }
+        child:;
+        for(int i=0;i<children.size();i++){
+            Node* newNode=new Node(children[i].first,children[i].second,node);
+            node->children.emplace_back(newNode);
+        }
+        futures.emplace_back(pool.enqueue([this, node, simboard, currentPlayer] {
+            simulate(node, simboard, currentPlayer);
+        }));
+    }
+    for(auto& future : futures) {
+        future.get();
+    }
+    Node* bestNode = nullptr;
+    double bestScore = -std::numeric_limits<double>::infinity();
+    for (auto child : root->children) {
+        double winRate = static_cast<double>(child->wins) / (child->visits + 1e-6);
+        if (winRate > bestScore) {
+            bestScore = winRate;
+            bestNode = child;
+        }
+    }
+    return {bestNode->x,bestNode->y,bestScore};
+    deleteNode(root);
 }
 
 char Player::getPiece() const {
     return piece;
 }
 
-void AIPlayer::calscore(Board* board, char piece){
-    memset(score,0,sizeof(score));
-    iniscore();
-    char oppo=(piece=='X'?'O':'X');
-    for(int i=0;i<board->getSize();i++){
-        for(int j=0;j<board->getSize();j++){
-            if(board->getPiece(i,j)!='.')continue;
-            if(!board->hasneighbor(i,j,1))continue;
-            int dir[4][2]={{0,1},{1,0},{1,-1},{1,1}};
-            for(int k=0;k<4;k++){
-                char pd1='.',pd2='.';
-                int cnt[2][2]={{0,0},{0,0}};//前一个表示方向后一个表示是否空白
-                int flag1=0,flag2=0;
-                int xx1=i+dir[k][0],yy1=j+dir[k][1],xx2=i-dir[k][0],yy2=j-dir[k][1];
-                if(board->isInBoard(xx1,yy1)){
-                    if(board->getPiece(xx1,yy1)!='.'){
-                        pd1=board->getPiece(xx1,yy1);
-                        cnt[0][1]++;
-                        while(board->isInBoard(xx1,yy1)){
-                            xx1+=dir[k][0],yy1+=dir[k][1];
-                            if(!board->isInBoard(xx1,yy1))break;
-                            if(board->getPiece(xx1,yy1)=='.'){
-                                cnt[0][0]++;
-                                flag1++;
-                                if(cnt[0][0]>1){
-                                    flag1=2;
-                                    break;
-                                }
-                            }
-                            else if(board->getPiece(xx1,yy1)==pd1){
-                                cnt[0][1]++;
-                            }
-                            else{
-                                if(pd1!=piece)flag1=cnt[0][1]-2;
-                                else flag1=-2;
-                                if(board->getPiece(xx1-dir[k][0],yy1-dir[k][1])==pd1)cnt[0][1]--;
-                                break;
-                            }
-                        }
-                    }
-                    else{
-                        flag1--;
-                        cnt[0][0]++;
-                        xx1+=dir[k][0],yy1+=dir[k][1]; 
-                        if(board->isInBoard(xx1,yy1)){
-                            if(board->getPiece(xx1,yy1)!='.'){
-                                pd1=board->getPiece(xx1,yy1);
-                                cnt[0][1]++;
-                                while(board->isInBoard(xx1,yy1)){
-                                    xx1+=dir[k][0],yy1+=dir[k][1];
-                                    if(!board->isInBoard(xx1,yy1))break;
-                                    if(board->getPiece(xx1,yy1)=='.'){
-                                        flag1=1;
-                                        break;
-                                    }
-                                    else if(board->getPiece(xx1,yy1)==pd1){
-                                        cnt[0][1]++;
-                                    }
-                                    else{
-                                        if(pd1!=piece)flag1=cnt[0][1]-2;
-                                        else flag1=-2;
-                                        if(board->getPiece(xx1-dir[k][0],yy1-dir[k][1])==pd1)cnt[0][1]--;
-                                        break;
-                                    }
-                                }
-                                if(pd1!=piece)flag1-=2;
-                            }
-                        }
-                    }
-                }
-                if(board->isInBoard(xx2,yy2)){
-                    if(board->getPiece(xx2,yy2)!='.'){
-                        pd2=board->getPiece(xx2,yy2);
-                        cnt[1][1]++;
-                        while(board->isInBoard(xx2,yy2)){
-                            xx2-=dir[k][0],yy2-=dir[k][1];
-                            if(!board->isInBoard(xx2,yy2))break;
-                            if(board->getPiece(xx2,yy2)=='.'){
-                                cnt[1][0]++;
-                                flag2++;
-                                if(cnt[1][0]>1){
-                                    flag2=2;
-                                    break;
-                                }
-                            }
-                            else if(board->getPiece(xx2,yy2)==pd2){
-                                cnt[1][1]++;
-                            }
-                            else{
-                                if(pd2!=piece)flag2=cnt[1][1]-2;
-                                else flag2=-2;
-                                if(board->getPiece(xx2+dir[k][0],yy2+dir[k][1])==pd2)cnt[1][1]--;
-                                break;
-                            }
-                        }
-                    }
-                    else{
-                        flag2--;
-                        cnt[1][0]++;
-                        xx2-=dir[k][0],yy2-=dir[k][1]; 
-                        if(board->isInBoard(xx2,yy2)){
-                            if(board->getPiece(xx2,yy2)!='.'){
-                                pd2=board->getPiece(xx2,yy2);
-                                cnt[1][1]++;
-                                while(board->isInBoard(xx2,yy2)){
-                                    xx2-=dir[k][0],yy2-=dir[k][1];
-                                    if(!board->isInBoard(xx2,yy2))break;
-                                    if(board->getPiece(xx2,yy2)=='.'){
-                                        flag2=1;
-                                        break;
-                                    }
-                                    else if(board->getPiece(xx2,yy2)==pd2){
-                                        cnt[1][1]++;
-                                    }
-                                    else{
-                                        if(pd2!=piece)flag2=cnt[1][1]-2;
-                                        else flag2=-2;
-                                        if(board->getPiece(xx2+dir[k][0],yy2+dir[k][1])==pd2)cnt[1][1]--;
-                                        break;
-                                    }
-                                }
-                                if(pd2!=piece)flag2-=2;
-                            }
-                        }
-                    }
-                }
-                //分情况对分数进行合计
-                if(pd1!=pd2)score[i][j]=std::max(score[i][j],std::max((cal[cnt[0][1]]*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd1==piece?1:(pd1=='.'?0:30))*pow(5,flag1),(cal[cnt[1][1]]*pow(0.2,cnt[1][0]+cnt[0][0]))*(pd2==piece?1:(pd2=='.'?0:30))*pow(5,flag2)));
-                else score[i][j]=std::max(score[i][j],(cal[cnt[0][1]+cnt[1][1]]*pow(0.2,cnt[0][0]+cnt[1][0]))*(pd2==piece?1:(pd2=='.'?0:30))*pow(5,std::max(flag1,flag2)));
-                if(board->checkWinFrom(i,j,piece))score[i][j]=1e9;
-                if(board->checkWinFrom(i,j,oppo))score[i][j]=1e9-1;
-            }
-        }
-    }
-}
-
-void AIPlayer::iniscore(){
-    for(int i=0;i<board->getSize();i++){
-        for(int j=0;j<board->getSize();j++){
-            score[i][j]+=1;
-        }
-    }
-    for(int i=3;i<board->getSize()-3;i++){
-        for(int j=3;j<board->getSize()-3;j++){
-            score[i][j]+=5;
-        }
-    }
-    for(int i=5;i<board->getSize()-5;i++){
-        for(int j=5;j<board->getSize()-5;j++){
-            score[i][j]+=10;
-        }
-    }
-    score[7][7]+=20;
-}
 int main(){
     string str;
     getline(cin, str);
@@ -393,10 +529,9 @@ int main(){
 	ai.board->placePiece(input["requests"][turnID]["x"].asInt(), input["requests"][turnID]["y"].asInt(), ai.getPiece()=='X'?'O':'X');
 	// 输出决策JSON
 	Json::Value ret;
-    ai.calscore(ai.board,ai.getPiece());
-    AIPlayer::move best=ai.bestmove(ai.board).top();
+    AIPlayer::move best=ai.mtcl(1000);
     ret["response"]["x"]=best.x;
-    ret["response"]["y"]=best.y; 
+    ret["response"]["y"]=best.y;
 	Json::FastWriter writer;
 	cout << writer.write(ret) << endl;
 }
